@@ -426,7 +426,7 @@ export default function PartnershipManagementPage() {
         </header>
 
         {/* Scrollable Content Container */}
-        <div className="flex-1 overflow-y-auto pb-32">
+        <div className="flex-1 overflow-y-auto">
           {/* Partners */}
           <div className="px-6 py-6 flex-1">
             <div className="flex items-center justify-between mb-6">
@@ -530,63 +530,7 @@ export default function PartnershipManagementPage() {
         </div>
       </div>
 
-      {/* Quick Actions Floating Button */}
-      <div className="fixed bottom-20 right-4">
-        <button className="w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 transition-colors flex items-center justify-center">
-          <Plus className="w-6 h-6" />
-        </button>
-      </div>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
-        <div className="flex items-center justify-around py-2 px-2">
-          <button 
-            onClick={() => setActiveNavItem('accueil')}
-            className={`flex flex-col items-center px-6 py-3 rounded-full transition-all duration-200 cursor-pointer hover:bg-gray-100 transform hover:scale-105 ${
-              activeNavItem === 'accueil' ? 'bg-gray-300' : ''
-            }`}
-          >
-            <Home className={`w-5 h-5 ${activeNavItem === 'accueil' ? 'text-gray-800' : 'text-gray-600'}`} />
-            <span className={`text-xs mt-1 font-medium ${activeNavItem === 'accueil' ? 'text-gray-800' : 'text-gray-600'}`}>Accueil</span>
-          </button>
-          <button 
-            onClick={() => setActiveNavItem('partenaires')}
-            className={`flex flex-col items-center px-6 py-3 rounded-full transition-all duration-200 cursor-pointer hover:bg-gray-100 transform hover:scale-105 ${
-              activeNavItem === 'partenaires' ? 'bg-gray-300' : ''
-            }`}
-          >
-            <Building2 className={`w-5 h-5 ${activeNavItem === 'partenaires' ? 'text-gray-800' : 'text-gray-600'}`} />
-            <span className={`text-xs mt-1 font-medium ${activeNavItem === 'partenaires' ? 'text-gray-800' : 'text-gray-600'}`}>Partenaires</span>
-          </button>
-          <a
-            href="/conventions"
-            className={`flex flex-col items-center px-6 py-3 rounded-full transition-all duration-200 cursor-pointer hover:bg-gray-100 transform hover:scale-105 ${
-              activeNavItem === 'conventions' ? 'bg-gray-300' : ''
-            }`}
-          >
-            <FileText className={`w-5 h-5 ${activeNavItem === 'conventions' ? 'text-gray-800' : 'text-gray-600'}`} />
-            <span className={`text-xs mt-1 font-medium ${activeNavItem === 'conventions' ? 'text-gray-800' : 'text-gray-600'}`}>Conventions</span>
-          </a>
-          <button 
-            onClick={() => setActiveNavItem('rapports')}
-            className={`flex flex-col items-center px-6 py-3 rounded-full transition-all duration-200 cursor-pointer hover:bg-gray-100 transform hover:scale-105 ${
-              activeNavItem === 'rapports' ? 'bg-gray-300' : ''
-            }`}
-          >
-            <BarChart3 className={`w-5 h-5 ${activeNavItem === 'rapports' ? 'text-gray-800' : 'text-gray-600'}`} />
-            <span className={`text-xs mt-1 font-medium ${activeNavItem === 'rapports' ? 'text-gray-800' : 'text-gray-600'}`}>Rapports</span>
-          </button>
-          <button 
-            onClick={() => setActiveNavItem('parametres')}
-            className={`flex flex-col items-center px-6 py-3 rounded-full transition-all duration-200 cursor-pointer hover:bg-gray-100 transform hover:scale-105 ${
-              activeNavItem === 'parametres' ? 'bg-gray-300' : ''
-            }`}
-          >
-            <Settings className={`w-5 h-5 ${activeNavItem === 'parametres' ? 'text-gray-800' : 'text-gray-600'}`} />
-            <span className={`text-xs mt-1 font-medium ${activeNavItem === 'parametres' ? 'text-gray-800' : 'text-gray-600'}`}>Paramètres</span>
-          </button>
-        </div>
-      </nav>
 
       {/* Popup des détails du partenaire */}
       {showDetailsPopup && selectedPartner && (
