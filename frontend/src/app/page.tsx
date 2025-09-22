@@ -408,9 +408,9 @@ export default function PartnershipManagementPage() {
                   <div key={index} className={`${stat.bgColor} p-4 rounded-xl border border-gray-200`}>
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-lg font-bold text-gray-900">{stat.value}</div>
-                        <div className="text-xs text-gray-700 font-medium">{stat.title}</div>
-                        <div className={`text-xs mt-1 font-semibold ${
+                        <div className="text-3xl font-bold text-gray-900">{stat.value}</div>
+                        <div className="text-base text-gray-700 font-medium">{stat.title}</div>
+                        <div className={`text-base mt-1 font-semibold ${
                           stat.trend === 'up' ? 'text-green-600' : 'text-red-500'
                         }`}>
                           {stat.change}
@@ -428,7 +428,7 @@ export default function PartnershipManagementPage() {
         </div>
 
         {/* Partners Section - Fixed with scrollable content */}
-        <div className="fixed top-56 right-4 left-[23rem] bottom-4 z-30">
+        <div className="fixed top-60 right-4 left-[23rem] bottom-4 z-30">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 h-full flex flex-col">
             {/* Header fixe */}
             <div className="p-6 pb-4 flex-shrink-0">
@@ -445,7 +445,7 @@ export default function PartnershipManagementPage() {
               <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {filteredPartners.map((partner) => (
               <div key={partner.id} className="bg-white rounded-lg border border-neutral-light overflow-hidden transition-all duration-200 hover:border-primary-medium">
-                <div className="p-3 pt-6">
+                <div className="px-3 pt-6 pb-0">
                   {/* Header avec cercle conventions et statut */}
                   <div className="flex items-start justify-between mb-2">
                     <div className="w-8 h-8 bg-[#023047] rounded-full flex items-center justify-center mb-1">
@@ -515,10 +515,10 @@ export default function PartnershipManagementPage() {
                   </div>
 
                   {/* Boutons d'action */}
-                  <div className="flex flex-col space-y-2 mt-6 mb-3">
+                  <div className="flex flex-col space-y-2 mt-6 -mb-4">
                     <button 
                       onClick={() => showPartnerDetails(partner)}
-                      className="text-black text-xs font-medium bg-gray-100 px-3 py-2 rounded-xl cursor-pointer hover:bg-gray-300 hover:text-gray-800 transition-all duration-200 transform hover:scale-105"
+                      className="text-black text-sm font-medium bg-gray-100 px-4 py-2 rounded-xl cursor-pointer hover:bg-gray-300 hover:text-gray-800 transition-all duration-200 transform hover:scale-105"
                     >
                       Voir détails
                     </button>
