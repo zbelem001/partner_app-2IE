@@ -297,94 +297,64 @@ export default function PartnershipManagementPage() {
   }, [updateProgress]);
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center space-x-3">
-              <div className="text-2xl">{user.avatar}</div>
-              <div>
-                <h1 className="font-semibold text-black">Bonjour {user.name}</h1>
-                <div className="flex items-center text-xs text-black">
-                  <MapPin className="w-3 h-3 mr-1" />
-                  {user.location}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <button className="relative p-2">
-                <Bell className="w-5 h-5 text-gray-600" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">{notifications}</span>
-              </button>
-              <button className="p-2">
-                <User className="w-5 h-5 text-gray-600" />
-              </button>
-              <div className="flex space-x-2">
-                <a 
-                  href="/login"
-                  className="px-3 py-1.5 bg-gray-400 text-white text-sm rounded-lg hover:bg-gray-500 transition-all duration-200"
-                >
-                  Déconnexion
-                </a>
+    <div className="min-h-screen bg-gray-100 flex">
+      {/* Sidebar Navigation */}
+      <div className="w-64 bg-white shadow-lg fixed left-0 top-0 h-full z-50 overflow-y-auto">
+        {/* User Info */}
+        <div className="p-4 border-b">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="text-2xl">{user.avatar}</div>
+            <div>
+              <h1 className="font-semibold text-black">Bonjour {user.name}</h1>
+              <div className="flex items-center text-xs text-black">
+                <MapPin className="w-3 h-3 mr-1" />
+                {user.location}
               </div>
             </div>
           </div>
-
-          {/* Search Bar */}
-          <div className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Rechercher partenaires, conventions..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Stats Summary */}
-          <div className="grid grid-cols-4 gap-3 mb-3">
-            {stats.map((stat, index) => (
-              <div key={index} className={`${stat.bgColor} p-4 rounded-xl border border-gray-200`}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-lg font-bold text-gray-900">{stat.value}</div>
-                    <div className="text-xs text-gray-700 font-medium">{stat.title}</div>
-                    <div className={`text-xs mt-1 font-semibold ${
-                      stat.trend === 'up' ? 'text-green-600' : 'text-red-500'
-                    }`}>
-                      {stat.change}
-                    </div>
-                  </div>
-                  <div className={`p-2 rounded-lg ${stat.iconBg}`}>
-                    <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
-                  </div>
-                </div>
-              </div>
-            ))}
+          
+          {/* Navigation Menu */}
+          <div className="mb-4">
+            <h2 className="font-semibold text-black mb-3">Navigation</h2>
+            <div className="space-y-2">
+              <button className="w-full text-left px-3 py-2 rounded-lg bg-[#023047] text-white text-sm font-medium">
+                Tableau de bord
+              </button>
+              <button 
+                onClick={() => window.location.href = '/conventions'}
+                className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 text-sm font-medium transition-colors"
+              >
+                Conventions
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 text-sm font-medium transition-colors">
+                Partenaires
+              </button>
+              <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 text-sm font-medium transition-colors">
+                Rapports
+              </button>
+            </div>
           </div>
 
           {/* Categories Section */}
-          <div className="border-t pt-3">
+          <div className="border-t pt-4">
             <div className="mb-3">
               <h2 className="font-semibold text-black">Catégories</h2>
             </div>
-            <div className="flex space-x-3 overflow-x-auto pb-2">
+            <div className="space-y-2">
               {categories.map((category) => {
                 const Icon = category.icon;
                 return (
                   <button
                     key={category.id}
                     onClick={() => setSelectedCategory(category.id)}
-                    className={`flex-shrink-0 flex flex-col items-center p-3 rounded-xl transition-all ${
+                    className={`w-full flex items-center space-x-3 p-2 rounded-lg transition-all ${
                       selectedCategory === category.id
-                        ? 'bg-gray-500 border-2 border-gray-600 text-white'
-                        : category.color + ' border-2 border-transparent'
+                        ? 'bg-gray-500 text-white'
+                        : 'hover:bg-gray-100 text-gray-700'
                     }`}
                   >
-                    <Icon className={`w-5 h-5 mb-1 ${selectedCategory === category.id ? 'text-white' : 'text-black'}`} />
-                    <span className={`text-xs font-medium ${selectedCategory === category.id ? 'text-white' : 'text-black'}`}>
+                    <Icon className={`w-4 h-4 ${selectedCategory === category.id ? 'text-white' : 'text-black'}`} />
+                    <span className={`text-sm font-medium ${selectedCategory === category.id ? 'text-white' : 'text-black'}`}>
                       {category.name}
                     </span>
                   </button>
@@ -392,21 +362,81 @@ export default function PartnershipManagementPage() {
               })}
             </div>
           </div>
-        </div>
-      </header>
 
-      {/* Scrollable Content Container */}
-      <div className="flex-1 overflow-y-auto pb-32">
-        {/* Partners */}
-        <div className="px-4 py-4 flex-1">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-black">
-              {selectedCategory === 'all' ? 'Tous les partenaires' : categories.find(c => c.id === selectedCategory)?.name}
-              <span className="text-sm text-black ml-2">({filteredPartners.length})</span>
-            </h2>
+          {/* Actions */}
+          <div className="border-t pt-4 mt-4">
+            <div className="flex items-center space-x-2 mb-3">
+              <button className="relative p-2 hover:bg-gray-100 rounded-lg">
+                <Bell className="w-5 h-5 text-gray-600" />
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">{notifications}</span>
+              </button>
+              <button className="p-2 hover:bg-gray-100 rounded-lg">
+                <User className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            <a 
+              href="/login"
+              className="block w-full text-center px-3 py-2 bg-gray-400 text-white text-sm rounded-lg hover:bg-gray-500 transition-all duration-200"
+            >
+              Déconnexion
+            </a>
           </div>
+        </div>
+      </div>
 
-          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+      {/* Main Content */}
+      <div className="flex-1 ml-64">
+        {/* Top Header */}
+        <header className="bg-white shadow-sm sticky top-0 z-40">
+          <div className="px-6 py-4">
+            {/* Search Bar */}
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Rechercher partenaires, conventions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Stats Summary */}
+            <div className="grid grid-cols-4 gap-4">
+              {stats.map((stat, index) => (
+                <div key={index} className={`${stat.bgColor} p-4 rounded-xl border border-gray-200`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-lg font-bold text-gray-900">{stat.value}</div>
+                      <div className="text-xs text-gray-700 font-medium">{stat.title}</div>
+                      <div className={`text-xs mt-1 font-semibold ${
+                        stat.trend === 'up' ? 'text-green-600' : 'text-red-500'
+                      }`}>
+                        {stat.change}
+                      </div>
+                    </div>
+                    <div className={`p-2 rounded-lg ${stat.iconBg}`}>
+                      <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </header>
+
+        {/* Scrollable Content Container */}
+        <div className="flex-1 overflow-y-auto pb-32">
+          {/* Partners */}
+          <div className="px-6 py-6 flex-1">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-semibold text-black text-xl">
+                {selectedCategory === 'all' ? 'Tous les partenaires' : categories.find(c => c.id === selectedCategory)?.name}
+                <span className="text-sm text-black ml-2">({filteredPartners.length})</span>
+              </h2>
+            </div>
+
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {filteredPartners.map((partner) => (
               <div key={partner.id} className="bg-white rounded-lg border border-neutral-light overflow-hidden transition-all duration-200 hover:border-primary-medium">
                 <div className="p-3 pt-6">
@@ -634,6 +664,7 @@ export default function PartnershipManagementPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
