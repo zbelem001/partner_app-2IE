@@ -446,9 +446,11 @@ export default function PartnershipManagementPage() {
             {filteredPartners.map((partner) => (
               <div key={partner.id} className="bg-white rounded-lg border border-neutral-light overflow-hidden transition-all duration-200 hover:border-primary-medium">
                 <div className="p-3 pt-6">
-                  {/* Header avec logo et statut */}
+                  {/* Header avec cercle conventions et statut */}
                   <div className="flex items-start justify-between mb-2">
-                    <div className="text-lg mb-1">{partner.logo}</div>
+                    <div className="w-8 h-8 bg-[#023047] rounded-full flex items-center justify-center mb-1">
+                      <span className="text-white text-xs font-bold">{partner.conventions}</span>
+                    </div>
                     <div className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${
                       partner.status === 'active' ? 'bg-green-100 text-green-600' :
                       partner.status === 'pending' ? 'bg-yellow-100 text-yellow-600' :
@@ -497,14 +499,13 @@ export default function PartnershipManagementPage() {
                     {partner.type}
                   </div>
                   
-                  {/* Rating et conventions */}
-                  <div className="flex items-center justify-between mb-2 text-xs">
+                  {/* Rating seulement */}
+                  <div className="flex items-center mb-2 text-xs">
                     <div className="flex items-center">
                       {partner.rating > 0 && (
                         <span className="text-black">{partner.rating}/5</span>
                       )}
                     </div>
-                    <span className="text-black">{partner.conventions} conv.</span>
                   </div>
 
                   {/* Date d'ajout */}
