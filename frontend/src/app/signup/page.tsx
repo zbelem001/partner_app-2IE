@@ -629,7 +629,7 @@ export default function SignupPage() {
   );
 
   return (
-    <div className="min-h-screen py-8 px-4" style={{background: 'linear-gradient(135deg, #e5e5e5 0%, #ffffff 100%)'}}>
+    <div className="min-h-screen py-8 px-4" style={{background: 'linear-gradient(135deg, #d1d5db 0%, #f3f4f6 100%)'}}>
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">

@@ -38,7 +38,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-light to-white flex items-center justify-center p-4" style={{background: 'linear-gradient(135deg, #e5e5e5 0%, #ffffff 100%)'}}>
+    <div className="min-h-screen bg-gradient-to-br from-neutral-light to-white flex items-center justify-center p-4" style={{background: 'linear-gradient(135deg, #d1d5db 0%, #f3f4f6 100%)'}}>
       <div className="max-w-md w-full space-y-8">
         {/* Logo/Titre */}
         <div className="text-center">
