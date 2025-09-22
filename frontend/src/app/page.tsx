@@ -297,9 +297,9 @@ export default function PartnershipManagementPage() {
   }, [updateProgress]);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className="min-h-screen bg-gray-100 p-4">
       {/* Sidebar Navigation */}
-      <div className="w-64 bg-white shadow-lg fixed left-0 top-0 h-full z-50 overflow-y-auto">
+      <div className="w-80 bg-white shadow-lg fixed left-4 top-4 h-[calc(100vh-2rem)] z-50 overflow-y-auto rounded-2xl">
         {/* User Info */}
         <div className="p-4 border-b">
           <div className="flex items-center space-x-3 mb-4">
@@ -384,59 +384,65 @@ export default function PartnershipManagementPage() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 ml-64">
+      {/* Main Content - with proper margin to avoid overlap */}
+      <div className="ml-[22rem]">
         {/* Top Header */}
-        <header className="bg-white shadow-sm sticky top-0 z-40">
-          <div className="px-6 py-4">
-            {/* Search Bar */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Rechercher partenaires, conventions..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+        <div className="fixed top-4 right-4 left-[23rem] z-40">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+            <div className="px-6 py-4">
+              {/* Search Bar */}
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher partenaires, conventions..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
 
-            {/* Stats Summary */}
-            <div className="grid grid-cols-4 gap-4">
-              {stats.map((stat, index) => (
-                <div key={index} className={`${stat.bgColor} p-4 rounded-xl border border-gray-200`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-lg font-bold text-gray-900">{stat.value}</div>
-                      <div className="text-xs text-gray-700 font-medium">{stat.title}</div>
-                      <div className={`text-xs mt-1 font-semibold ${
-                        stat.trend === 'up' ? 'text-green-600' : 'text-red-500'
-                      }`}>
-                        {stat.change}
+              {/* Stats Summary */}
+              <div className="grid grid-cols-4 gap-4">
+                {stats.map((stat, index) => (
+                  <div key={index} className={`${stat.bgColor} p-4 rounded-xl border border-gray-200`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-lg font-bold text-gray-900">{stat.value}</div>
+                        <div className="text-xs text-gray-700 font-medium">{stat.title}</div>
+                        <div className={`text-xs mt-1 font-semibold ${
+                          stat.trend === 'up' ? 'text-green-600' : 'text-red-500'
+                        }`}>
+                          {stat.change}
+                        </div>
+                      </div>
+                      <div className={`p-2 rounded-lg ${stat.iconBg}`}>
+                        <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
                       </div>
                     </div>
-                    <div className={`p-2 rounded-lg ${stat.iconBg}`}>
-                      <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
-                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </header>
+        </div>
 
-        {/* Scrollable Content Container */}
-        <div className="flex-1 overflow-y-auto">
-          {/* Partners */}
-          <div className="px-6 py-6 flex-1">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="font-semibold text-black text-xl">
-                {selectedCategory === 'all' ? 'Tous les partenaires' : categories.find(c => c.id === selectedCategory)?.name}
-                <span className="text-sm text-black ml-2">({filteredPartners.length})</span>
-              </h2>
+        {/* Partners Section - Fixed with scrollable content */}
+        <div className="fixed top-56 right-4 left-[23rem] bottom-4 z-30">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 h-full flex flex-col">
+            {/* Header fixe */}
+            <div className="p-6 pb-4 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <h2 className="font-semibold text-black text-xl">
+                  {selectedCategory === 'all' ? 'Tous les partenaires' : categories.find(c => c.id === selectedCategory)?.name}
+                  <span className="text-sm text-black ml-2">({filteredPartners.length})</span>
+                </h2>
+              </div>
             </div>
 
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+            {/* Contenu défilable */}
+            <div className="flex-1 overflow-y-auto px-6 pb-6">
+              <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {filteredPartners.map((partner) => (
               <div key={partner.id} className="bg-white rounded-lg border border-neutral-light overflow-hidden transition-all duration-200 hover:border-primary-medium">
                 <div className="p-3 pt-6">
@@ -526,11 +532,11 @@ export default function PartnershipManagementPage() {
                 </div>
               </div>
             ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
-
 
       {/* Popup des détails du partenaire */}
       {showDetailsPopup && selectedPartner && (
@@ -608,7 +614,6 @@ export default function PartnershipManagementPage() {
           </div>
         </div>
       )}
-      </div>
     </div>
   );
 }
