@@ -47,12 +47,12 @@ export default function ConventionsPage() {
       id: 1,
       title: "Convention de Coopération Académique",
       partner: "Université de Paris",
-      partnerLogo: "",
+      partnerLogo: "🏛️",
       type: "Académique",
       status: "active",
       startDate: "2024-01-15",
       endDate: "2026-01-15",
-      value: "98,400,000 FCFA",
+      value: "150,000 €",
       description: "Échange d'étudiants et de professeurs, recherches conjointes",
       progress: 75,
       category: "education",
@@ -64,12 +64,12 @@ export default function ConventionsPage() {
       id: 2,
       title: "Partenariat Recherche Hydraulique",
       partner: "CIRAD",
-      partnerLogo: "",
+      partnerLogo: "🔬",
       type: "Recherche",
       status: "active",
       startDate: "2023-09-01",
       endDate: "2025-09-01",
-      value: "55,760,000 FCFA",
+      value: "85,000 €",
       description: "Recherche sur l'irrigation intelligente en zone sahélienne",
       progress: 60,
       category: "research",
@@ -81,12 +81,12 @@ export default function ConventionsPage() {
       id: 3,
       title: "Convention Stage Étudiants",
       partner: "EIFFAGE",
-      partnerLogo: "",
+      partnerLogo: "🏗️",
       type: "Professionnel",
       status: "pending",
       startDate: "2024-03-01",
       endDate: "2025-03-01",
-      value: "29,520,000 FCFA",
+      value: "45,000 €",
       description: "Programme de stages en ingénierie civile",
       progress: 25,
       category: "industry",
@@ -98,12 +98,12 @@ export default function ConventionsPage() {
       id: 4,
       title: "Accord Échange Technologique",
       partner: "Mines ParisTech",
-      partnerLogo: "",
+      partnerLogo: "⚡",
       type: "Technologie",
       status: "draft",
       startDate: "2024-06-01",
       endDate: "2027-06-01",
-      value: "131,200,000 FCFA",
+      value: "200,000 €",
       description: "Transfert de technologies énergétiques durables",
       progress: 10,
       category: "technology",
@@ -115,12 +115,12 @@ export default function ConventionsPage() {
       id: 5,
       title: "Convention Formation Continue",
       partner: "TOTAL ENERGIES",
-      partnerLogo: "",
+      partnerLogo: "⛽",
       type: "Formation",
       status: "active",
       startDate: "2023-11-01",
       endDate: "2024-11-01",
-      value: "49,200,000 FCFA",
+      value: "75,000 €",
       description: "Formation continue en énergies renouvelables",
       progress: 90,
       category: "training",
@@ -132,12 +132,12 @@ export default function ConventionsPage() {
       id: 6,
       title: "Partenariat Innovation Agricole",
       partner: "CGIAR",
-      partnerLogo: "",
+      partnerLogo: "🌾",
       type: "Innovation",
       status: "expired",
       startDate: "2022-01-01",
       endDate: "2024-01-01",
-      value: "78,720,000 FCFA",
+      value: "120,000 €",
       description: "Développement de solutions agricoles innovantes",
       progress: 100,
       category: "agriculture",
@@ -149,12 +149,12 @@ export default function ConventionsPage() {
       id: 7,
       title: "Convention Mobilité Étudiante",
       partner: "Université Cheikh Anta Diop",
-      partnerLogo: "",
+      partnerLogo: "🎓",
       type: "Mobilité",
       status: "active",
       startDate: "2024-02-01",
       endDate: "2026-02-01",
-      value: "39,360,000 FCFA",
+      value: "60,000 €",
       description: "Programme d'échange d'étudiants ouest-africains",
       progress: 45,
       category: "education",
@@ -166,12 +166,12 @@ export default function ConventionsPage() {
       id: 8,
       title: "Accord Recherche Environnementale",
       partner: "IRD",
-      partnerLogo: "",
+      partnerLogo: "🌍",
       type: "Environnement",
       status: "pending",
       startDate: "2024-04-01",
       endDate: "2026-04-01",
-      value: "62,320,000 FCFA",
+      value: "95,000 €",
       description: "Étude de l'impact climatique en Afrique de l'Ouest",
       progress: 15,
       category: "environment",
@@ -183,12 +183,12 @@ export default function ConventionsPage() {
       id: 9,
       title: "Convention Entrepreneuriat",
       partner: "Groupe COFINA",
-      partnerLogo: "",
+      partnerLogo: "💼",
       type: "Entrepreneuriat",
       status: "draft",
       startDate: "2024-07-01",
       endDate: "2025-07-01",
-      value: "26,240,000 FCFA",
+      value: "40,000 €",
       description: "Incubation de startups technologiques",
       progress: 5,
       category: "business",
@@ -306,11 +306,11 @@ export default function ConventionsPage() {
         </div>
       </div>
 
-      {/* Main Content - with proper margin to avoid overlap */}
+      {/* Main Content */}
       <div className="ml-[22rem]">
         {/* Top Header */}
-        <div className="fixed top-4 right-4 left-[23rem] z-40">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+        <div className="mx-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 sticky top-0 z-40">
             <div className="px-6 py-4">
               {/* Search Bar */}
               <div className="relative mb-4">
@@ -369,9 +369,9 @@ export default function ConventionsPage() {
           </div>
         </div>
 
-        {/* Conventions Section - Fixed with scrollable content */}
-        <div className="fixed top-64 right-4 left-[23rem] bottom-4 z-30">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 h-full flex flex-col">
+        {/* Conventions Section - Fixed with scrollable content and aligned margins */}
+        <div className="mx-6 mt-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 h-[calc(100vh-280px)] flex flex-col">
             {/* Header fixe */}
             <div className="p-6 pb-4 flex-shrink-0">
               <div className="flex items-center justify-between">
@@ -404,7 +404,8 @@ export default function ConventionsPage() {
                       {/* Title and Partner */}
                       <div className="mb-3">
                         <h3 className="font-semibold text-gray-900 text-sm mb-1 line-clamp-2">{convention.title}</h3>
-                        <p className="text-xs text-gray-600">
+                        <p className="text-xs text-gray-600 flex items-center">
+                          <span className="mr-1">{convention.partnerLogo}</span>
                           {convention.partner}
                         </p>
                       </div>
@@ -464,9 +465,12 @@ export default function ConventionsPage() {
             {/* Header du popup */}
             <div className="p-6 border-b border-gray-300">
               <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-gray-800">{selectedConvention.title}</h3>
-                  <p className="text-sm text-gray-600">{selectedConvention.partner}</p>
+                <div className="flex items-center space-x-3">
+                  <span className="text-2xl">{selectedConvention.partnerLogo}</span>
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-800">{selectedConvention.title}</h3>
+                    <p className="text-sm text-gray-600">{selectedConvention.partner}</p>
+                  </div>
                 </div>
                 <button 
                   onClick={closeDetailsPopup}
