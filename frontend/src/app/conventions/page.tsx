@@ -10,28 +10,65 @@ import {
 } from 'lucide-react';
 
 interface Convention {
-  id: number;
-  title: string;
-  partner: string;
-  partnerLogo: string;
-  type: string;
-  status: 'active' | 'pending' | 'expired' | 'draft';
-  startDate: string;
-  endDate: string;
-  value: string;
-  description: string;
-  progress: number;
-  category: string;
-  priority: 'high' | 'medium' | 'low';
-  documents: number;
-  lastUpdate: string;
+  id_convention: number;
+  titre: string;
+  type_convention: string;
+  objet: string;
+  reference_interne: string;
+  statut: 'brouillon' | 'en_validation' | 'signe' | 'expire';
+  date_signature: string | null;
+  date_debut: string | null;
+  date_fin: string | null;
+  montant_engage: number;
+  service_concerne: string;
+  date_creation: string;
+  derniere_mise_a_jour: string;
+  // Relations PostgreSQL
+  partenaire: {
+    id_partenaire: number;
+    nom_organisation: string;
+    secteur: string;
+    pays: string;
+    contact: string;
+    email_contact: string;
+  };
+  responsable: {
+    id_utilisateur: number;
+    nom: string;
+    prenom: string;
+    service: string;
+  } | null;
+  documents_count: number;
+  evaluation?: {
+    taux_realisation: number;
+    evaluation_finale: string;
+  };
 }
 
 export default function ConventionsPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'pending' | 'draft' | 'expired'>('all');
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'brouillon' | 'en_validation' | 'signe' | 'expire'>('all');
   const [showDetailsPopup, setShowDetailsPopup] = useState(false);
   const [selectedConvention, setSelectedConvention] = useState<Convention | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newConvention, setNewConvention] = useState({
+    titre: '',
+    type_convention: '',
+    objet: '',
+    reference_interne: '',
+    date_debut: '',
+    date_fin: '',
+    montant_engage: '',
+    service_concerne: '',
+    partenaire_nom: '',
+    partenaire_secteur: '',
+    partenaire_pays: '',
+    partenaire_contact: '',
+    partenaire_email: '',
+    responsable_nom: '',
+    responsable_prenom: '',
+    responsable_service: ''
+  });
 
   const user = {
     name: "Admin 2iE",
@@ -41,169 +78,219 @@ export default function ConventionsPage() {
 
   const notifications = 3;
 
-  // Données des conventions
-  const conventions: Convention[] = [
+  // Données des conventions (PostgreSQL format)
+  const [conventions, setConventions] = useState<Convention[]>([
     {
-      id: 1,
-      title: "Convention de Coopération Académique",
-      partner: "Université de Paris",
-      partnerLogo: "",
-      type: "Académique",
-      status: "active",
-      startDate: "2024-01-15",
-      endDate: "2026-01-15",
-      value: "98,400,000 FCFA",
-      description: "Échange d'étudiants et de professeurs, recherches conjointes",
-      progress: 75,
-      category: "education",
-      priority: "high",
-      documents: 12,
-      lastUpdate: "2024-11-20"
+      id_convention: 1,
+      titre: "Convention de Coopération Académique",
+      type_convention: "Académique",
+      objet: "Échange d'étudiants et de professeurs, recherches conjointes",
+      reference_interne: "CONV-2024-001",
+      statut: "signe",
+      date_signature: "2024-01-15",
+      date_debut: "2024-01-15",
+      date_fin: "2026-01-15",
+      montant_engage: 98400000,
+      service_concerne: "Relations Internationales",
+      date_creation: "2024-01-10T10:00:00Z",
+      derniere_mise_a_jour: "2024-11-20T14:30:00Z",
+      partenaire: {
+        id_partenaire: 1,
+        nom_organisation: "Université de Paris",
+        secteur: "Enseignement Supérieur",
+        pays: "France",
+        contact: "Dr. Marie Dupont",
+        email_contact: "marie.dupont@univ-paris.fr"
+      },
+      responsable: {
+        id_utilisateur: 1,
+        nom: "OUEDRAOGO",
+        prenom: "Amadou",
+        service: "SRECIP"
+      },
+      documents_count: 12,
+      evaluation: {
+        taux_realisation: 75,
+        evaluation_finale: "en_cours"
+      }
     },
     {
-      id: 2,
-      title: "Partenariat Recherche Hydraulique",
-      partner: "CIRAD",
-      partnerLogo: "",
-      type: "Recherche",
-      status: "active",
-      startDate: "2023-09-01",
-      endDate: "2025-09-01",
-      value: "55,760,000 FCFA",
-      description: "Recherche sur l'irrigation intelligente en zone sahélienne",
-      progress: 60,
-      category: "research",
-      priority: "high",
-      documents: 8,
-      lastUpdate: "2024-11-18"
+      id_convention: 2,
+      titre: "Partenariat Recherche Hydraulique",
+      type_convention: "Recherche",
+      objet: "Recherche sur l'irrigation intelligente en zone sahélienne",
+      reference_interne: "CONV-2023-012",
+      statut: "signe",
+      date_signature: "2023-09-01",
+      date_debut: "2023-09-01",
+      date_fin: "2025-09-01",
+      montant_engage: 55760000,
+      service_concerne: "Recherche et Innovation",
+      date_creation: "2023-08-15T09:00:00Z",
+      derniere_mise_a_jour: "2024-11-18T16:45:00Z",
+      partenaire: {
+        id_partenaire: 2,
+        nom_organisation: "CIRAD",
+        secteur: "Recherche Agricole",
+        pays: "France",
+        contact: "Dr. Jean Martin",
+        email_contact: "j.martin@cirad.fr"
+      },
+      responsable: {
+        id_utilisateur: 2,
+        nom: "KONE",
+        prenom: "Salimata",
+        service: "Recherche"
+      },
+      documents_count: 8,
+      evaluation: {
+        taux_realisation: 60,
+        evaluation_finale: "en_cours"
+      }
     },
     {
-      id: 3,
-      title: "Convention Stage Étudiants",
-      partner: "EIFFAGE",
-      partnerLogo: "",
-      type: "Professionnel",
-      status: "pending",
-      startDate: "2024-03-01",
-      endDate: "2025-03-01",
-      value: "29,520,000 FCFA",
-      description: "Programme de stages en ingénierie civile",
-      progress: 25,
-      category: "industry",
-      priority: "medium",
-      documents: 5,
-      lastUpdate: "2024-11-15"
+      id_convention: 3,
+      titre: "Convention Stage Étudiants",
+      type_convention: "Formation",
+      objet: "Programme de stages en ingénierie civile",
+      reference_interne: "CONV-2024-025",
+      statut: "en_validation",
+      date_signature: null,
+      date_debut: "2024-03-01",
+      date_fin: "2025-03-01",
+      montant_engage: 29520000,
+      service_concerne: "Formation",
+      date_creation: "2024-02-20T11:00:00Z",
+      derniere_mise_a_jour: "2024-11-15T10:20:00Z",
+      partenaire: {
+        id_partenaire: 3,
+        nom_organisation: "EIFFAGE",
+        secteur: "BTP",
+        pays: "France",
+        contact: "M. Pierre Dubois",
+        email_contact: "p.dubois@eiffage.com"
+      },
+      responsable: {
+        id_utilisateur: 3,
+        nom: "TRAORE",
+        prenom: "Moussa",
+        service: "Formation"
+      },
+      documents_count: 5,
+      evaluation: {
+        taux_realisation: 25,
+        evaluation_finale: "en_cours"
+      }
     },
     {
-      id: 4,
-      title: "Accord Échange Technologique",
-      partner: "Mines ParisTech",
-      partnerLogo: "",
-      type: "Technologie",
-      status: "draft",
-      startDate: "2024-06-01",
-      endDate: "2027-06-01",
-      value: "131,200,000 FCFA",
-      description: "Transfert de technologies énergétiques durables",
-      progress: 10,
-      category: "technology",
-      priority: "high",
-      documents: 3,
-      lastUpdate: "2024-11-10"
+      id_convention: 4,
+      titre: "Accord Échange Technologique",
+      type_convention: "Technologie",
+      objet: "Transfert de technologies énergétiques durables",
+      reference_interne: "CONV-2024-040",
+      statut: "brouillon",
+      date_signature: null,
+      date_debut: "2024-06-01",
+      date_fin: "2027-06-01",
+      montant_engage: 131200000,
+      service_concerne: "Innovation",
+      date_creation: "2024-05-10T14:00:00Z",
+      derniere_mise_a_jour: "2024-11-10T09:15:00Z",
+      partenaire: {
+        id_partenaire: 4,
+        nom_organisation: "Mines ParisTech",
+        secteur: "Enseignement Supérieur",
+        pays: "France",
+        contact: "Prof. Claire Leroy",
+        email_contact: "c.leroy@mines-paristech.fr"
+      },
+      responsable: {
+        id_utilisateur: 4,
+        nom: "SAWADOGO",
+        prenom: "Fatimata",
+        service: "Innovation"
+      },
+      documents_count: 3,
+      evaluation: {
+        taux_realisation: 10,
+        evaluation_finale: "en_cours"
+      }
     },
     {
-      id: 5,
-      title: "Convention Formation Continue",
-      partner: "TOTAL ENERGIES",
-      partnerLogo: "",
-      type: "Formation",
-      status: "active",
-      startDate: "2023-11-01",
-      endDate: "2024-11-01",
-      value: "49,200,000 FCFA",
-      description: "Formation continue en énergies renouvelables",
-      progress: 90,
-      category: "training",
-      priority: "medium",
-      documents: 15,
-      lastUpdate: "2024-11-22"
+      id_convention: 5,
+      titre: "Convention Formation Continue",
+      type_convention: "Formation",
+      objet: "Formation continue en énergies renouvelables",
+      reference_interne: "CONV-2023-055",
+      statut: "signe",
+      date_signature: "2023-11-01",
+      date_debut: "2023-11-01",
+      date_fin: "2024-11-01",
+      montant_engage: 49200000,
+      service_concerne: "Formation Continue",
+      date_creation: "2023-10-15T13:30:00Z",
+      derniere_mise_a_jour: "2024-11-22T08:45:00Z",
+      partenaire: {
+        id_partenaire: 5,
+        nom_organisation: "TOTAL ENERGIES",
+        secteur: "Énergie",
+        pays: "France",
+        contact: "Mme. Sophie Bernard",
+        email_contact: "s.bernard@totalenergies.com"
+      },
+      responsable: {
+        id_utilisateur: 5,
+        nom: "ZONGO",
+        prenom: "Ibrahim",
+        service: "Formation Continue"
+      },
+      documents_count: 15,
+      evaluation: {
+        taux_realisation: 90,
+        evaluation_finale: "reussie"
+      }
     },
     {
-      id: 6,
-      title: "Partenariat Innovation Agricole",
-      partner: "CGIAR",
-      partnerLogo: "",
-      type: "Innovation",
-      status: "expired",
-      startDate: "2022-01-01",
-      endDate: "2024-01-01",
-      value: "78,720,000 FCFA",
-      description: "Développement de solutions agricoles innovantes",
-      progress: 100,
-      category: "agriculture",
-      priority: "low",
-      documents: 20,
-      lastUpdate: "2024-01-01"
-    },
-    {
-      id: 7,
-      title: "Convention Mobilité Étudiante",
-      partner: "Université Cheikh Anta Diop",
-      partnerLogo: "",
-      type: "Mobilité",
-      status: "active",
-      startDate: "2024-02-01",
-      endDate: "2026-02-01",
-      value: "39,360,000 FCFA",
-      description: "Programme d'échange d'étudiants ouest-africains",
-      progress: 45,
-      category: "education",
-      priority: "medium",
-      documents: 7,
-      lastUpdate: "2024-11-20"
-    },
-    {
-      id: 8,
-      title: "Accord Recherche Environnementale",
-      partner: "IRD",
-      partnerLogo: "",
-      type: "Environnement",
-      status: "pending",
-      startDate: "2024-04-01",
-      endDate: "2026-04-01",
-      value: "62,320,000 FCFA",
-      description: "Étude de l'impact climatique en Afrique de l'Ouest",
-      progress: 15,
-      category: "environment",
-      priority: "high",
-      documents: 4,
-      lastUpdate: "2024-11-12"
-    },
-    {
-      id: 9,
-      title: "Convention Entrepreneuriat",
-      partner: "Groupe COFINA",
-      partnerLogo: "",
-      type: "Entrepreneuriat",
-      status: "draft",
-      startDate: "2024-07-01",
-      endDate: "2025-07-01",
-      value: "26,240,000 FCFA",
-      description: "Incubation de startups technologiques",
-      progress: 5,
-      category: "business",
-      priority: "medium",
-      documents: 2,
-      lastUpdate: "2024-11-08"
+      id_convention: 6,
+      titre: "Partenariat Innovation Agricole",
+      type_convention: "Recherche",
+      objet: "Développement de solutions agricoles innovantes",
+      reference_interne: "CONV-2022-080",
+      statut: "expire",
+      date_signature: "2022-01-01",
+      date_debut: "2022-01-01",
+      date_fin: "2024-01-01",
+      montant_engage: 78720000,
+      service_concerne: "Recherche Agricole",
+      date_creation: "2021-12-01T10:00:00Z",
+      derniere_mise_a_jour: "2024-01-01T23:59:00Z",
+      partenaire: {
+        id_partenaire: 6,
+        nom_organisation: "CGIAR",
+        secteur: "Recherche Agricole",
+        pays: "International",
+        contact: "Dr. Ahmed Hassan",
+        email_contact: "a.hassan@cgiar.org"
+      },
+      responsable: {
+        id_utilisateur: 6,
+        nom: "OUATTARA",
+        prenom: "Adama",
+        service: "Recherche"
+      },
+      documents_count: 20,
+      evaluation: {
+        taux_realisation: 100,
+        evaluation_finale: "reussie"      }
     }
-  ];
+  ]);
 
   // Filtrage des conventions
   const filteredConventions = conventions.filter(convention => {
-    const matchesSearch = convention.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         convention.partner.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         convention.type.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = selectedStatus === 'all' || convention.status === selectedStatus;
+    const matchesSearch = convention.titre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         convention.partenaire.nom_organisation.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         convention.type_convention.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = selectedStatus === 'all' || convention.statut === selectedStatus;
     return matchesSearch && matchesStatus;
   });
 
@@ -217,33 +304,118 @@ export default function ConventionsPage() {
     setSelectedConvention(null);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-700';
-      case 'pending': return 'bg-yellow-100 text-yellow-700';
-      case 'draft': return 'bg-blue-100 text-blue-700';
-      case 'expired': return 'bg-red-100 text-red-700';
+  const openAddModal = () => {
+    setShowAddModal(true);
+  };
+
+  const closeAddModal = () => {
+    setShowAddModal(false);
+    setNewConvention({
+      titre: '',
+      type_convention: '',
+      objet: '',
+      reference_interne: '',
+      date_debut: '',
+      date_fin: '',
+      montant_engage: '',
+      service_concerne: '',
+      partenaire_nom: '',
+      partenaire_secteur: '',
+      partenaire_pays: '',
+      partenaire_contact: '',
+      partenaire_email: '',
+      responsable_nom: '',
+      responsable_prenom: '',
+      responsable_service: ''
+    });
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewConvention(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const generateReference = () => {
+    const year = new Date().getFullYear();
+    const count = conventions.length + 1;
+    return `CONV-${year}-${count.toString().padStart(3, '0')}`;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Générer automatiquement la référence si elle n'est pas fournie
+    const reference = newConvention.reference_interne || generateReference();
+    
+    const nouvelleConvention: Convention = {
+      id_convention: conventions.length + 1,
+      titre: newConvention.titre,
+      type_convention: newConvention.type_convention,
+      objet: newConvention.objet,
+      reference_interne: reference,
+      statut: 'brouillon',
+      date_signature: null,
+      date_debut: newConvention.date_debut || null,
+      date_fin: newConvention.date_fin || null,
+      montant_engage: parseFloat(newConvention.montant_engage) || 0,
+      service_concerne: newConvention.service_concerne,
+      date_creation: new Date().toISOString(),
+      derniere_mise_a_jour: new Date().toISOString(),
+      partenaire: {
+        id_partenaire: conventions.length + 1,
+        nom_organisation: newConvention.partenaire_nom,
+        secteur: newConvention.partenaire_secteur,
+        pays: newConvention.partenaire_pays,
+        contact: newConvention.partenaire_contact,
+        email_contact: newConvention.partenaire_email
+      },
+      responsable: newConvention.responsable_nom ? {
+        id_utilisateur: 1,
+        nom: newConvention.responsable_nom,
+        prenom: newConvention.responsable_prenom,
+        service: newConvention.responsable_service
+      } : null,
+      documents_count: 0,
+      evaluation: {
+        taux_realisation: 0,
+        evaluation_finale: "en_cours"
+      }
+    };
+
+    // Dans une vraie application, ceci serait un appel API
+    setConventions(prev => [...prev, nouvelleConvention]);
+    
+    closeAddModal();
+    
+    // Notification de succès (optionnel)
+    alert('Convention ajoutée avec succès !');
+  };
+
+  const getStatusColor = (statut: string) => {
+    switch (statut) {
+      case 'signe': return 'bg-green-100 text-green-700';
+      case 'en_validation': return 'bg-yellow-100 text-yellow-700';
+      case 'brouillon': return 'bg-blue-100 text-blue-700';
+      case 'expire': return 'bg-red-100 text-red-700';
       default: return 'bg-gray-100 text-gray-700';
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'active': return 'Active';
-      case 'pending': return 'En attente';
-      case 'draft': return 'Brouillon';
-      case 'expired': return 'Expirée';
-      default: return status;
+  const getStatusText = (statut: string) => {
+    switch (statut) {
+      case 'signe': return 'Signée';
+      case 'en_validation': return 'En validation';
+      case 'brouillon': return 'Brouillon';
+      case 'expire': return 'Expirée';
+      default: return statut;
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'text-red-600';
-      case 'medium': return 'text-yellow-600';
-      case 'low': return 'text-green-600';
-      default: return 'text-gray-600';
-    }
+  const formatMontant = (montant: number) => {
+    return new Intl.NumberFormat('fr-FR').format(montant) + ' FCFA';
   };
 
   return (
@@ -327,20 +499,20 @@ export default function ConventionsPage() {
               {/* Filter Options */}
               <div className="flex items-center space-x-4 mb-4">
                 <div className="flex space-x-2">
-                  {['all', 'active', 'pending', 'draft', 'expired'].map((status) => (
+                  {['all', 'signe', 'en_validation', 'brouillon', 'expire'].map((status) => (
                     <button
                       key={status}
-                      onClick={() => setSelectedStatus(status as 'all' | 'active' | 'pending' | 'draft' | 'expired')}
+                      onClick={() => setSelectedStatus(status as 'all' | 'brouillon' | 'en_validation' | 'signe' | 'expire')}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                         selectedStatus === status
                           ? 'bg-[#023047] text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      {status === 'all' ? 'Tous' : 
-                       status === 'active' ? 'Actives' :
-                       status === 'pending' ? 'En attente' :
-                       status === 'draft' ? 'Brouillons' : 'Expirées'}
+                      {status === 'all' ? 'Toutes' : 
+                       status === 'signe' ? 'Signées' :
+                       status === 'en_validation' ? 'En validation' :
+                       status === 'brouillon' ? 'Brouillons' : 'Expirées'}
                     </button>
                   ))}
                 </div>
@@ -349,15 +521,15 @@ export default function ConventionsPage() {
               {/* Stats */}
               <div className="grid grid-cols-4 gap-4">
                 <div className="bg-green-50 p-4 rounded-xl border border-gray-200">
-                  <div className="text-3xl font-bold text-green-700">{conventions.filter(c => c.status === 'active').length}</div>
-                  <div className="text-base text-green-600 font-medium">Actives</div>
+                  <div className="text-3xl font-bold text-green-700">{conventions.filter(c => c.statut === 'signe').length}</div>
+                  <div className="text-base text-green-600 font-medium">Signées</div>
                 </div>
                 <div className="bg-yellow-50 p-4 rounded-xl border border-gray-200">
-                  <div className="text-3xl font-bold text-yellow-700">{conventions.filter(c => c.status === 'pending').length}</div>
-                  <div className="text-base text-yellow-600 font-medium">En attente</div>
+                  <div className="text-3xl font-bold text-yellow-700">{conventions.filter(c => c.statut === 'en_validation').length}</div>
+                  <div className="text-base text-yellow-600 font-medium">En validation</div>
                 </div>
                 <div className="bg-blue-50 p-4 rounded-xl border border-gray-200">
-                  <div className="text-3xl font-bold text-blue-700">{conventions.filter(c => c.status === 'draft').length}</div>
+                  <div className="text-3xl font-bold text-blue-700">{conventions.filter(c => c.statut === 'brouillon').length}</div>
                   <div className="text-base text-blue-600 font-medium">Brouillons</div>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
@@ -378,7 +550,10 @@ export default function ConventionsPage() {
                 <h2 className="font-semibold text-black text-xl">
                   Conventions ({filteredConventions.length})
                 </h2>
-                <button className="px-4 py-2 bg-[#023047] text-white rounded-lg hover:bg-[#0f4c5c] transition-colors flex items-center space-x-2">
+                <button 
+                  onClick={openAddModal}
+                  className="px-4 py-2 bg-[#023047] text-white rounded-lg hover:bg-[#0f4c5c] transition-colors flex items-center space-x-2"
+                >
                   <Plus className="w-4 h-4" />
                   <span>Nouvelle</span>
                 </button>
@@ -389,44 +564,44 @@ export default function ConventionsPage() {
             <div className="flex-1 overflow-y-auto px-6 pb-6">
               <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
                 {filteredConventions.map((convention) => (
-                  <div key={convention.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-[#023047] transition-all duration-200 shadow-sm hover:shadow-md">
+                  <div key={convention.id_convention} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-[#023047] transition-all duration-200 shadow-sm hover:shadow-md">
                     <div className="p-5">
                       {/* Header */}
                       <div className="flex items-start justify-between mb-3">
                         <div className="w-10 h-10 bg-[#023047] rounded-full flex items-center justify-center">
-                          <span className="text-white text-sm font-bold">{convention.documents}</span>
+                          <span className="text-white text-sm font-bold">{convention.documents_count}</span>
                         </div>
-                        <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(convention.status)}`}>
-                          {getStatusText(convention.status)}
+                        <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(convention.statut)}`}>
+                          {getStatusText(convention.statut)}
                         </div>
                       </div>
 
                       {/* Title and Partner */}
                       <div className="mb-3">
-                        <h3 className="font-semibold text-gray-900 text-sm mb-1 line-clamp-2">{convention.title}</h3>
+                        <h3 className="font-semibold text-gray-900 text-sm mb-1 line-clamp-2">{convention.titre}</h3>
                         <p className="text-xs text-gray-600">
-                          {convention.partner}
+                          {convention.partenaire.nom_organisation}
                         </p>
                       </div>
 
                       {/* Type and Value */}
                       <div className="mb-3">
                         <div className="text-xs text-gray-700 font-medium mb-1 bg-gray-100 px-2 py-1 rounded text-center">
-                          {convention.type}
+                          {convention.type_convention}
                         </div>
-                        <div className="text-sm font-bold text-[#023047]">{convention.value}</div>
+                        <div className="text-sm font-bold text-[#023047]">{formatMontant(convention.montant_engage)}</div>
                       </div>
 
                       {/* Progress Bar */}
                       <div className="mb-3">
                         <div className="flex justify-between items-center mb-1">
                           <span className="text-xs text-gray-600">Progression</span>
-                          <span className="text-xs font-medium">{convention.progress}%</span>
+                          <span className="text-xs font-medium">{convention.evaluation?.taux_realisation || 0}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div 
                             className="bg-[#023047] h-2 rounded-full transition-all duration-300" 
-                            style={{ width: `${convention.progress}%` }}
+                            style={{ width: `${convention.evaluation?.taux_realisation || 0}%` }}
                           ></div>
                         </div>
                       </div>
@@ -434,8 +609,8 @@ export default function ConventionsPage() {
                       {/* Dates */}
                       <div className="mb-4 text-xs text-gray-600">
                         <div className="flex justify-between">
-                          <span>Début: {new Date(convention.startDate).toLocaleDateString('fr-FR')}</span>
-                          <span>Fin: {new Date(convention.endDate).toLocaleDateString('fr-FR')}</span>
+                          <span>Début: {convention.date_debut ? new Date(convention.date_debut).toLocaleDateString('fr-FR') : 'N/A'}</span>
+                          <span>Fin: {convention.date_fin ? new Date(convention.date_fin).toLocaleDateString('fr-FR') : 'N/A'}</span>
                         </div>
                       </div>
 
@@ -465,8 +640,9 @@ export default function ConventionsPage() {
             <div className="p-6 border-b border-gray-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-gray-800">{selectedConvention.title}</h3>
-                  <p className="text-sm text-gray-600">{selectedConvention.partner}</p>
+                  <h3 className="text-lg font-bold text-gray-800">{selectedConvention.titre}</h3>
+                  <p className="text-sm text-gray-600">{selectedConvention.partenaire.nom_organisation}</p>
+                  <p className="text-xs text-gray-500">Réf: {selectedConvention.reference_interne}</p>
                 </div>
                 <button 
                   onClick={closeDetailsPopup}
@@ -483,47 +659,68 @@ export default function ConventionsPage() {
                 <div className="bg-white rounded-xl p-4">
                   <h4 className="font-semibold text-gray-800 mb-2">Informations générales</h4>
                   <div className="space-y-2 text-sm">
-                    <div><span className="font-medium">Type:</span> {selectedConvention.type}</div>
-                    <div><span className="font-medium">Valeur:</span> {selectedConvention.value}</div>
+                    <div><span className="font-medium">Type:</span> {selectedConvention.type_convention}</div>
+                    <div><span className="font-medium">Montant:</span> {formatMontant(selectedConvention.montant_engage)}</div>
                     <div><span className="font-medium">Statut:</span> 
-                      <span className={`ml-2 px-2 py-1 rounded-full text-xs ${getStatusColor(selectedConvention.status)}`}>
-                        {getStatusText(selectedConvention.status)}
+                      <span className={`ml-2 px-2 py-1 rounded-full text-xs ${getStatusColor(selectedConvention.statut)}`}>
+                        {getStatusText(selectedConvention.statut)}
                       </span>
                     </div>
-                    <div><span className="font-medium">Priorité:</span> 
-                      <span className={`ml-2 font-semibold ${getPriorityColor(selectedConvention.priority)}`}>
-                        {selectedConvention.priority === 'high' ? 'Élevée' : 
-                         selectedConvention.priority === 'medium' ? 'Moyenne' : 'Faible'}
-                      </span>
-                    </div>
+                    <div><span className="font-medium">Service:</span> {selectedConvention.service_concerne}</div>
                   </div>
                 </div>
 
                 <div className="bg-white rounded-xl p-4">
                   <h4 className="font-semibold text-gray-800 mb-2">Dates et progression</h4>
                   <div className="space-y-2 text-sm">
-                    <div><span className="font-medium">Début:</span> {new Date(selectedConvention.startDate).toLocaleDateString('fr-FR')}</div>
-                    <div><span className="font-medium">Fin:</span> {new Date(selectedConvention.endDate).toLocaleDateString('fr-FR')}</div>
-                    <div><span className="font-medium">Progression:</span> {selectedConvention.progress}%</div>
-                    <div><span className="font-medium">Documents:</span> {selectedConvention.documents}</div>
+                    <div><span className="font-medium">Signature:</span> {selectedConvention.date_signature ? new Date(selectedConvention.date_signature).toLocaleDateString('fr-FR') : 'Non signée'}</div>
+                    <div><span className="font-medium">Début:</span> {selectedConvention.date_debut ? new Date(selectedConvention.date_debut).toLocaleDateString('fr-FR') : 'N/A'}</div>
+                    <div><span className="font-medium">Fin:</span> {selectedConvention.date_fin ? new Date(selectedConvention.date_fin).toLocaleDateString('fr-FR') : 'N/A'}</div>
+                    <div><span className="font-medium">Documents:</span> {selectedConvention.documents_count}</div>
                   </div>
                 </div>
               </div>
 
               <div className="bg-white rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-gray-800 mb-2">Description</h4>
-                <p className="text-sm text-gray-700">{selectedConvention.description}</p>
+                <h4 className="font-semibold text-gray-800 mb-2">Objet</h4>
+                <p className="text-sm text-gray-700">{selectedConvention.objet}</p>
               </div>
 
+              <div className="bg-white rounded-xl p-4 mb-6">
+                <h4 className="font-semibold text-gray-800 mb-2">Partenaire</h4>
+                <div className="space-y-2 text-sm">
+                  <div><span className="font-medium">Organisation:</span> {selectedConvention.partenaire.nom_organisation}</div>
+                  <div><span className="font-medium">Secteur:</span> {selectedConvention.partenaire.secteur}</div>
+                  <div><span className="font-medium">Pays:</span> {selectedConvention.partenaire.pays}</div>
+                  <div><span className="font-medium">Contact:</span> {selectedConvention.partenaire.contact}</div>
+                  <div><span className="font-medium">Email:</span> {selectedConvention.partenaire.email_contact}</div>
+                </div>
+              </div>
+
+              {selectedConvention.responsable && (
+                <div className="bg-white rounded-xl p-4 mb-6">
+                  <h4 className="font-semibold text-gray-800 mb-2">Responsable</h4>
+                  <div className="space-y-2 text-sm">
+                    <div><span className="font-medium">Nom:</span> {selectedConvention.responsable.nom} {selectedConvention.responsable.prenom}</div>
+                    <div><span className="font-medium">Service:</span> {selectedConvention.responsable.service}</div>
+                  </div>
+                </div>
+              )}
+
               <div className="bg-white rounded-xl p-4">
-                <h4 className="font-semibold text-gray-800 mb-2">Barre de progression</h4>
+                <h4 className="font-semibold text-gray-800 mb-2">Évaluation</h4>
                 <div className="w-full bg-gray-200 rounded-full h-3">
                   <div 
                     className="bg-[#023047] h-3 rounded-full transition-all duration-300" 
-                    style={{ width: `${selectedConvention.progress}%` }}
+                    style={{ width: `${selectedConvention.evaluation?.taux_realisation || 0}%` }}
                   ></div>
                 </div>
-                <p className="text-sm text-gray-600 mt-2">Progression: {selectedConvention.progress}%</p>
+                <p className="text-sm text-gray-600 mt-2">
+                  Taux de réalisation: {selectedConvention.evaluation?.taux_realisation || 0}%
+                  {selectedConvention.evaluation?.evaluation_finale && (
+                    <span className="ml-2">({selectedConvention.evaluation.evaluation_finale})</span>
+                  )}
+                </p>
               </div>
             </div>
 
@@ -536,6 +733,304 @@ export default function ConventionsPage() {
                 Fermer
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'ajout de convention */}
+      {showAddModal && (
+        <div className="fixed inset-0 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header du modal */}
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-gray-800">Nouvelle Convention</h3>
+                <button 
+                  onClick={closeAddModal}
+                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* Formulaire */}
+            <form onSubmit={handleSubmit} className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* Informations générales */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-800 text-lg">Informations générales</h4>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Titre <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="titre"
+                      value={newConvention.titre}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                      placeholder="Titre de la convention"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Type de convention <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="type_convention"
+                      value={newConvention.type_convention}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                    >
+                      <option value="">Sélectionner un type</option>
+                      <option value="Académique">Académique</option>
+                      <option value="Recherche">Recherche</option>
+                      <option value="Formation">Formation</option>
+                      <option value="Technologie">Technologie</option>
+                      <option value="Innovation">Innovation</option>
+                      <option value="Partenariat">Partenariat</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Référence interne
+                    </label>
+                    <input
+                      type="text"
+                      name="reference_interne"
+                      value={newConvention.reference_interne}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                      placeholder="Auto-générée si vide"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Service concerné <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="service_concerne"
+                      value={newConvention.service_concerne}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                    >
+                      <option value="">Sélectionner un service</option>
+                      <option value="SRECIP">SRECIP</option>
+                      <option value="Relations Internationales">Relations Internationales</option>
+                      <option value="Recherche et Innovation">Recherche et Innovation</option>
+                      <option value="Formation">Formation</option>
+                      <option value="Formation Continue">Formation Continue</option>
+                      <option value="Innovation">Innovation</option>
+                      <option value="Recherche Agricole">Recherche Agricole</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Montant engagé (FCFA)
+                    </label>
+                    <input
+                      type="number"
+                      name="montant_engage"
+                      value={newConvention.montant_engage}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                      placeholder="0"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Date de début
+                      </label>
+                      <input
+                        type="date"
+                        name="date_debut"
+                        value={newConvention.date_debut}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Date de fin
+                      </label>
+                      <input
+                        type="date"
+                        name="date_fin"
+                        value={newConvention.date_fin}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Informations partenaire */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-800 text-lg">Informations partenaire</h4>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nom de l&apos;organisation <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="partenaire_nom"
+                      value={newConvention.partenaire_nom}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                      placeholder="Nom du partenaire"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Secteur
+                    </label>
+                    <input
+                      type="text"
+                      name="partenaire_secteur"
+                      value={newConvention.partenaire_secteur}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                      placeholder="Secteur d'activité"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Pays
+                    </label>
+                    <input
+                      type="text"
+                      name="partenaire_pays"
+                      value={newConvention.partenaire_pays}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                      placeholder="Pays du partenaire"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Contact
+                    </label>
+                    <input
+                      type="text"
+                      name="partenaire_contact"
+                      value={newConvention.partenaire_contact}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                      placeholder="Nom du contact"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email du contact
+                    </label>
+                    <input
+                      type="email"
+                      name="partenaire_email"
+                      value={newConvention.partenaire_email}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                      placeholder="email@partenaire.com"
+                    />
+                  </div>
+
+                  <h4 className="font-semibold text-gray-800 text-lg mt-6">Responsable 2iE</h4>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Nom
+                      </label>
+                      <input
+                        type="text"
+                        name="responsable_nom"
+                        value={newConvention.responsable_nom}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                        placeholder="Nom du responsable"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Prénom
+                      </label>
+                      <input
+                        type="text"
+                        name="responsable_prenom"
+                        value={newConvention.responsable_prenom}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                        placeholder="Prénom du responsable"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Service du responsable
+                    </label>
+                    <input
+                      type="text"
+                      name="responsable_service"
+                      value={newConvention.responsable_service}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                      placeholder="Service du responsable"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Objet de la convention */}
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Objet de la convention <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  name="objet"
+                  value={newConvention.objet}
+                  onChange={handleInputChange}
+                  required
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                  placeholder="Décrivez l'objet et les objectifs de la convention..."
+                />
+              </div>
+
+              {/* Boutons */}
+              <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={closeAddModal}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-[#023047] text-white rounded-lg hover:bg-[#0f4c5c] transition-colors"
+                >
+                  Créer la convention
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
