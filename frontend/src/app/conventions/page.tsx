@@ -107,6 +107,67 @@ export default function ConventionsPage() {
     }
   }, [router]);
 
+  // Traitement des paramètres URL pour les prospects convertis
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const fromProspect = urlParams.get('from_prospect') === 'true';
+      
+      if (fromProspect) {
+        // Pré-remplir le formulaire avec les données du prospect
+        const prospectData = {
+          prospect_id: parseInt(urlParams.get('prospect_id') || '0'),
+          nom_organisation: urlParams.get('nom_organisation') || '',
+          secteur: urlParams.get('secteur') || '',
+          pays: urlParams.get('pays') || '',
+          contact: urlParams.get('contact') || '',
+          email_contact: urlParams.get('email_contact') || '',
+          telephone_contact: urlParams.get('telephone_contact') || '',
+          notes: urlParams.get('notes') || ''
+        };
+
+        setNewConvention({
+          titre: `Convention avec ${prospectData.nom_organisation}`,
+          type_convention: getTypeConventionBySecteur(prospectData.secteur),
+          objet: `Collaboration avec ${prospectData.nom_organisation} - ${prospectData.secteur}`,
+          reference_interne: `CONV-${prospectData.prospect_id}-${new Date().getFullYear()}`,
+          date_debut: '',
+          date_fin: '',
+          montant_engage: '',
+          service_concerne: '',
+          prospect_id: prospectData.prospect_id,
+          responsable_nom: prospectData.contact,
+          responsable_prenom: '',
+          responsable_service: prospectData.secteur
+        });
+
+        // Ouvrir automatiquement le modal de création
+        setShowAddModal(true);
+        
+        // Nettoyer l'URL
+        window.history.replaceState({}, '', '/conventions');
+      }
+    }
+  }, []);
+
+  // Fonction utilitaire pour déterminer le type de convention selon le secteur
+  const getTypeConventionBySecteur = (secteur: string): string => {
+    const secteurLower = secteur.toLowerCase();
+    if (secteurLower.includes('enseignement') || secteurLower.includes('éducation')) {
+      return 'Convention académique';
+    } else if (secteurLower.includes('recherche')) {
+      return 'Convention de recherche';
+    } else if (secteurLower.includes('industrie')) {
+      return 'Convention industrielle';
+    } else if (secteurLower.includes('technologie') || secteurLower.includes('tech')) {
+      return 'Convention innovation';
+    } else if (secteurLower.includes('finance') || secteurLower.includes('développement')) {
+      return 'Convention financement';
+    } else {
+      return 'Convention générale';
+    }
+  };
+
   // Fonction de déconnexion
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated');
@@ -1207,36 +1268,36 @@ export default function ConventionsPage() {
                 )}
               </div>
 
-              <div className="bg-white rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-black mb-2">Partenaire</h4>
+              <div className="bg-white rounded-xl p-4 mb-6 border border-gray-200">
+                <h4 className="font-semibold text-gray-900 mb-2">Partenaire</h4>
                 <div className="space-y-2 text-sm">
-                  <div><span className="font-medium">Organisation:</span> {selectedConvention.partenaire.nom_organisation}</div>
-                  <div><span className="font-medium">Secteur:</span> {selectedConvention.partenaire.secteur}</div>
-                  <div><span className="font-medium">Pays:</span> {selectedConvention.partenaire.pays}</div>
-                  <div><span className="font-medium">Contact:</span> {selectedConvention.partenaire.contact}</div>
-                  <div><span className="font-medium">Email:</span> {selectedConvention.partenaire.email_contact}</div>
+                  <div><span className="font-medium text-gray-700">Organisation:</span> <span className="text-gray-900">{selectedConvention.partenaire.nom_organisation}</span></div>
+                  <div><span className="font-medium text-gray-700">Secteur:</span> <span className="text-gray-900">{selectedConvention.partenaire.secteur}</span></div>
+                  <div><span className="font-medium text-gray-700">Pays:</span> <span className="text-gray-900">{selectedConvention.partenaire.pays}</span></div>
+                  <div><span className="font-medium text-gray-700">Contact:</span> <span className="text-gray-900">{selectedConvention.partenaire.contact}</span></div>
+                  <div><span className="font-medium text-gray-700">Email:</span> <span className="text-gray-900">{selectedConvention.partenaire.email_contact}</span></div>
                 </div>
               </div>
 
               {selectedConvention.responsable && (
-                <div className="bg-white rounded-xl p-4 mb-6">
-                  <h4 className="font-semibold text-black mb-2">Responsable</h4>
+                <div className="bg-white rounded-xl p-4 mb-6 border border-gray-200">
+                  <h4 className="font-semibold text-gray-900 mb-2">Responsable</h4>
                   <div className="space-y-2 text-sm">
-                    <div><span className="font-medium">Nom:</span> {selectedConvention.responsable.nom} {selectedConvention.responsable.prenom}</div>
-                    <div><span className="font-medium">Service:</span> {selectedConvention.responsable.service}</div>
+                    <div><span className="font-medium text-gray-700">Nom:</span> <span className="text-gray-900">{selectedConvention.responsable.nom} {selectedConvention.responsable.prenom}</span></div>
+                    <div><span className="font-medium text-gray-700">Service:</span> <span className="text-gray-900">{selectedConvention.responsable.service}</span></div>
                   </div>
                 </div>
               )}
 
-              <div className="bg-white rounded-xl p-4">
-                <h4 className="font-semibold text-black mb-2">Évaluation</h4>
+              <div className="bg-white rounded-xl p-4 border border-gray-200">
+                <h4 className="font-semibold text-gray-900 mb-2">Évaluation</h4>
                 <div className="w-full bg-gray-200 rounded-full h-3">
                   <div 
                     className="bg-[#023047] h-3 rounded-full transition-all duration-300" 
                     style={{ width: `${selectedConvention.evaluation?.taux_realisation || 0}%` }}
                   ></div>
                 </div>
-                <p className="text-sm text-black mt-2">
+                <p className="text-sm text-gray-800 mt-2">
                   Taux de réalisation: {selectedConvention.evaluation?.taux_realisation || 0}%
                   {selectedConvention.evaluation?.evaluation_finale && (
                     <span className="ml-2">({selectedConvention.evaluation.evaluation_finale})</span>

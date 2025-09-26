@@ -15,7 +15,8 @@ import {
   Building,
   Mail,
   Phone,
-  Trash2
+  Trash2,
+  FileText
 } from 'lucide-react';
 import { Prospect as ProspectType } from '../../types/database';
 
@@ -25,6 +26,7 @@ interface ProspectWithExtra extends ProspectType {
   derniere_mise_a_jour: string;
   notes?: string;
   potentiel_partenariat: 'faible' | 'moyen' | 'eleve';
+  utilisateur_id?: number; // Rendre optionnel pour compatibilité
 }
 
 export default function ProspectsPage() {
@@ -86,6 +88,7 @@ export default function ProspectsPage() {
       email_contact: "m.tremblay@polymtl.ca",
       telephone_contact: "+1-514-340-4711",
       statut: "qualifie",
+      utilisateur_id: 10,
       date_creation: "2024-10-15T10:00:00Z",
       derniere_mise_a_jour: "2024-11-20T14:30:00Z",
       notes: "Intéressé par un programme d'échange d'étudiants en génie civil",
@@ -100,6 +103,7 @@ export default function ProspectsPage() {
       email_contact: "k.asante@afdb.org",
       telephone_contact: "+225-20-26-39-00",
       statut: "en_contact",
+      utilisateur_id: 10,
       date_creation: "2024-11-01T09:00:00Z",
       derniere_mise_a_jour: "2024-11-22T16:45:00Z",
       notes: "Recherche de partenaires pour projets d'infrastructure en Afrique de l'Ouest",
@@ -114,6 +118,7 @@ export default function ProspectsPage() {
       email_contact: "a.mensah@greentech.gh",
       telephone_contact: "+233-30-276-8000",
       statut: "en_contact",
+      utilisateur_id: 10,
       date_creation: "2024-09-20T14:00:00Z",
       derniere_mise_a_jour: "2024-11-18T11:20:00Z",
       notes: "Startup spécialisée dans les solutions d'énergie solaire",
@@ -128,6 +133,7 @@ export default function ProspectsPage() {
       email_contact: "m.ba@isra.sn",
       telephone_contact: "+221-33-834-73-73",
       statut: "qualifie",
+      utilisateur_id: 10,
       date_creation: "2024-08-10T08:30:00Z",
       derniere_mise_a_jour: "2024-11-15T09:15:00Z",
       notes: "Collaboration potentielle sur l'agriculture durable",
@@ -142,6 +148,7 @@ export default function ProspectsPage() {
       email_contact: "c.okafor@techcorp.ng",
       telephone_contact: "+234-1-461-0000",
       statut: "abandonne",
+      utilisateur_id: 10,
       date_creation: "2024-07-05T13:00:00Z",
       derniere_mise_a_jour: "2024-09-30T17:00:00Z",
       notes: "Pas de réponse après plusieurs relances",
@@ -156,6 +163,7 @@ export default function ProspectsPage() {
       email_contact: "f.sow@ucad.edu.sn",
       telephone_contact: "+221-33-824-69-81",
       statut: "en_contact",
+      utilisateur_id: 10,
       date_creation: "2024-11-10T15:30:00Z",
       derniere_mise_a_jour: "2024-11-21T10:45:00Z",
       notes: "Extension des programmes de mobilité étudiante existants",
@@ -221,6 +229,7 @@ export default function ProspectsPage() {
       email_contact: newProspect.email_contact,
       telephone_contact: newProspect.telephone_contact,
       statut: 'en_contact',
+      utilisateur_id: 10, // ID de l'utilisateur connecté
       date_creation: new Date().toISOString(),
       derniere_mise_a_jour: new Date().toISOString(),
       notes: newProspect.notes,
@@ -281,6 +290,28 @@ export default function ProspectsPage() {
       case 'faible': return 'text-red-600';
       default: return 'text-black';
     }
+  };
+
+  // Fonction de conversion prospect vers convention
+  const convertProspectToConvention = (prospect: ProspectWithExtra) => {
+    // Créer les paramètres de redirection avec les données du prospect
+    const params = new URLSearchParams({
+      from_prospect: 'true',
+      prospect_id: prospect.id_prospect.toString(),
+      nom_organisation: prospect.nom_organisation,
+      secteur: prospect.secteur,
+      pays: prospect.pays,
+      contact: prospect.contact || '',
+      email_contact: prospect.email_contact || '',
+      telephone_contact: prospect.telephone_contact || '',
+      notes: prospect.notes || ''
+    });
+
+    // Marquer le prospect comme converti
+    updateProspectStatus(prospect.id_prospect, 'qualifie');
+
+    // Rediriger vers la page conventions avec les données pré-remplies
+    router.push(`/conventions?${params.toString()}`);
   };
 
   return (
@@ -519,6 +550,17 @@ export default function ProspectsPage() {
                               <span>Abandonner</span>
                             </button>
                           </div>
+                        )}
+
+                        {/* Convert to Convention - Only for qualified prospects */}
+                        {prospect.statut === 'qualifie' && (
+                          <button
+                            onClick={() => convertProspectToConvention(prospect)}
+                            className="w-full text-sm font-medium bg-blue-100 text-blue-700 px-4 py-2 rounded-xl hover:bg-blue-200 transition-all duration-200 flex items-center justify-center space-x-2"
+                          >
+                            <FileText className="w-4 h-4" />
+                            <span>Créer Convention</span>
+                          </button>
                         )}
                       </div>
                     </div>

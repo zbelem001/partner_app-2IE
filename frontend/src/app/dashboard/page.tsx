@@ -77,6 +77,25 @@ export default function DashboardPage() {
     }
   };
 
+  // Statistiques de workflow (conversions entre entités)
+  const workflowStats = {
+    conversions_ce_mois: {
+      prospect_vers_convention: 8,
+      convention_signee_vers_partenaire: 6,
+      partenaire_vers_partenariat: 5
+    },
+    taux_conversion: {
+      prospects_qualifies: Math.round((globalStats.prospects.qualifies / globalStats.prospects.total) * 100),
+      conventions_signees: Math.round((globalStats.conventions.signees / globalStats.conventions.total) * 100),
+      partenariats_actifs: Math.round((globalStats.partenariats.actifs / globalStats.partenariats.total) * 100)
+    },
+    pipeline: {
+      prospects_en_attente: globalStats.prospects.en_contact,
+      conventions_en_validation: globalStats.conventions.en_cours,
+      partenariats_en_negociation: 12
+    }
+  };
+
   // Données pour les graphiques
   const chartData = {
     prospectsByMonth: [
@@ -241,6 +260,112 @@ export default function DashboardPage() {
                 <span className="text-gray-600">{globalStats.partenariats.termines} Terminés</span>
               </div>
               <div className="text-xs text-green-600 font-medium">+{globalStats.partenariats.nouveaux_ce_mois} ce mois</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Section workflow - Visualisation du pipeline */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+          <h3 className="font-semibold text-gray-800 mb-6">Pipeline de conversion</h3>
+          
+          {/* Diagramme de flux */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col items-center space-y-2 flex-1">
+              <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center">
+                <Users className="w-10 h-10 text-white" />
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{globalStats.prospects.total}</div>
+                <div className="text-sm text-gray-600">Prospects</div>
+                <div className="text-xs text-green-600 mt-1">
+                  +{globalStats.prospects.nouveaux_ce_mois} ce mois
+                </div>
+              </div>
+            </div>
+            
+            {/* Flèche 1 */}
+            <div className="flex flex-col items-center mx-4">
+              <div className="text-center bg-gray-50 px-3 py-1 rounded-lg">
+                <div className="text-lg font-bold text-amber-600">{workflowStats.conversions_ce_mois.prospect_vers_convention}</div>
+                <div className="text-xs text-gray-500">conversions</div>
+              </div>
+              <div className="w-8 h-0.5 bg-gray-400 mt-2"></div>
+              <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-400"></div>
+            </div>
+
+            <div className="flex flex-col items-center space-y-2 flex-1">
+              <div className="w-20 h-20 bg-amber-500 rounded-full flex items-center justify-center">
+                <Briefcase className="w-10 h-10 text-white" />
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-amber-600">{globalStats.conventions.total}</div>
+                <div className="text-sm text-gray-600">Conventions</div>
+                <div className="text-xs text-green-600 mt-1">
+                  +{globalStats.conventions.nouvelles_ce_mois} ce mois
+                </div>
+              </div>
+            </div>
+
+            {/* Flèche 2 */}
+            <div className="flex flex-col items-center mx-4">
+              <div className="text-center bg-gray-50 px-3 py-1 rounded-lg">
+                <div className="text-lg font-bold text-green-600">{workflowStats.conversions_ce_mois.convention_signee_vers_partenaire}</div>
+                <div className="text-xs text-gray-500">signatures</div>
+              </div>
+              <div className="w-8 h-0.5 bg-gray-400 mt-2"></div>
+              <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-400"></div>
+            </div>
+
+            <div className="flex flex-col items-center space-y-2 flex-1">
+              <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center">
+                <Building2 className="w-10 h-10 text-white" />
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{globalStats.partenaires.total}</div>
+                <div className="text-sm text-gray-600">Partenaires</div>
+                <div className="text-xs text-green-600 mt-1">
+                  +{globalStats.partenaires.nouveaux_ce_mois} ce mois
+                </div>
+              </div>
+            </div>
+
+            {/* Flèche 3 */}
+            <div className="flex flex-col items-center mx-4">
+              <div className="text-center bg-gray-50 px-3 py-1 rounded-lg">
+                <div className="text-lg font-bold text-purple-600">{workflowStats.conversions_ce_mois.partenaire_vers_partenariat}</div>
+                <div className="text-xs text-gray-500">nouveaux</div>
+              </div>
+              <div className="w-8 h-0.5 bg-gray-400 mt-2"></div>
+              <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-400"></div>
+            </div>
+
+            <div className="flex flex-col items-center space-y-2 flex-1">
+              <div className="w-20 h-20 bg-purple-500 rounded-full flex items-center justify-center">
+                <Handshake className="w-10 h-10 text-white" />
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600">{globalStats.partenariats.total}</div>
+                <div className="text-sm text-gray-600">Partenariats</div>
+                <div className="text-xs text-green-600 mt-1">
+                  +{globalStats.partenariats.nouveaux_ce_mois} ce mois
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Taux de conversion */}
+          <div className="grid grid-cols-3 gap-6 bg-gray-50 p-4 rounded-lg">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{workflowStats.taux_conversion.prospects_qualifies}%</div>
+              <div className="text-sm text-gray-600">Prospects qualifiés</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-amber-600">{workflowStats.taux_conversion.conventions_signees}%</div>
+              <div className="text-sm text-gray-600">Conventions signées</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">{workflowStats.taux_conversion.partenariats_actifs}%</div>
+              <div className="text-sm text-gray-600">Partenariats actifs</div>
             </div>
           </div>
         </div>

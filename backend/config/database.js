@@ -99,6 +99,18 @@ const createTables = async () => {
       `ALTER TABLE prospects ADD COLUMN IF NOT EXISTS utilisateur_id INT REFERENCES utilisateurs(id_utilisateur) ON DELETE CASCADE;`
     ];
 
+    // Ajouter les colonnes manquantes pour la table partenariats
+    const addMissingPartenariatsColumns = [
+      `ALTER TABLE partenariats ADD COLUMN IF NOT EXISTS type_partenariat VARCHAR(50);`,
+      `ALTER TABLE partenariats ADD COLUMN IF NOT EXISTS objectifs TEXT;`,
+      `ALTER TABLE partenariats ADD COLUMN IF NOT EXISTS benefices_attendus TEXT;`,
+      `ALTER TABLE partenariats ADD COLUMN IF NOT EXISTS responsable_2ie_id INT REFERENCES utilisateurs(id_utilisateur) ON DELETE SET NULL;`,
+      `ALTER TABLE partenariats ADD COLUMN IF NOT EXISTS derniere_mise_a_jour TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`,
+      `ALTER TABLE partenariats ALTER COLUMN statut TYPE VARCHAR(50);`,
+      `ALTER TABLE partenariats DROP CONSTRAINT IF EXISTS partenariats_statut_check;`,
+      `ALTER TABLE partenariats ADD CONSTRAINT partenariats_statut_check CHECK (statut IN ('actif', 'inactif', 'suspendu', 'termine'));`
+    ];
+
     // ========================
     // TABLE PROSPECTS
     // ========================
@@ -147,11 +159,15 @@ const createTables = async () => {
         partenaire_id       INT REFERENCES partenaires(id_partenaire) ON DELETE CASCADE,
         titre               VARCHAR(255) NOT NULL,
         description         TEXT,
-        statut              VARCHAR(50) DEFAULT 'actif' CHECK (statut IN ('actif', 'suspendu', 'termine')),
+        type_partenariat    VARCHAR(50),
+        statut              VARCHAR(50) DEFAULT 'actif' CHECK (statut IN ('actif', 'inactif', 'suspendu', 'termine')),
         date_debut          DATE,
         date_fin            DATE,
-        responsable_id      INT REFERENCES utilisateurs(id_utilisateur) ON DELETE SET NULL,
-        date_creation       TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        objectifs           TEXT,
+        benefices_attendus  TEXT,
+        responsable_2ie_id  INT REFERENCES utilisateurs(id_utilisateur) ON DELETE SET NULL,
+        date_creation       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        derniere_mise_a_jour TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `;
 
@@ -284,6 +300,18 @@ const createTables = async () => {
 
     await pool.query(createPartnershipsTable);
     console.log('✅ Table partenariats créée');
+
+    // Ajouter les colonnes manquantes pour les partenariats
+    for (const alterQuery of addMissingPartenariatsColumns) {
+      try {
+        await pool.query(alterQuery);
+      } catch (error) {
+        // Ignorer les erreurs si la colonne existe déjà ou autres contraintes
+        if (!error.message.includes('already exists') && !error.message.includes('does not exist')) {
+          console.log(`Info partenariats: ${error.message}`);
+        }
+      }
+    }
 
     await pool.query(createConventionsTable);
     console.log('✅ Table conventions créée');
