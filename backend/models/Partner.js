@@ -276,6 +276,55 @@ class Partner {
       throw new Error(`Erreur lors de la récupération des statistiques: ${error.message}`);
     }
   }
+
+  // Alias pour getStatistics (compatibilité avec le contrôleur)
+  static async getStats() {
+    return await this.getStatistics();
+  }
+
+  // Vérifier si un partenaire a des partenariats
+  static async hasPartenariats(partnerId) {
+    try {
+      const query = `
+        SELECT COUNT(*) as count
+        FROM partenariats 
+        WHERE partenaire_id = $1
+      `;
+
+      const result = await pool.query(query, [partnerId]);
+      return parseInt(result.rows[0].count) > 0;
+    } catch (error) {
+      throw new Error(`Erreur lors de la vérification des partenariats: ${error.message}`);
+    }
+  }
+
+  // Trouver les partenaires par pays
+  static async findByCountry(country) {
+    try {
+      const query = `
+        SELECT 
+          p.*,
+          COUNT(pt.id_partenariat) as nombre_partenariats
+        FROM partenaires p
+        LEFT JOIN partenariats pt ON p.id_partenaire = pt.partenaire_id
+        WHERE LOWER(p.pays) = LOWER($1)
+        GROUP BY p.id_partenaire, p.nom_organisation, p.type_organisation, 
+                 p.pays, p.ville, p.adresse, p.email_contact, p.telephone_contact,
+                 p.site_web, p.secteur_activite, p.description, p.statut,
+                 p.date_creation, p.derniere_mise_a_jour
+        ORDER BY p.nom_organisation ASC
+      `;
+
+      const result = await pool.query(query, [country]);
+      return result.rows.map(row => {
+        const partner = new Partner(row);
+        partner.nombre_partenariats = parseInt(row.nombre_partenariats);
+        return partner;
+      });
+    } catch (error) {
+      throw new Error(`Erreur lors de la récupération des partenaires par pays: ${error.message}`);
+    }
+  }
 }
 
 module.exports = Partner;

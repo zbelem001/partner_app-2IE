@@ -385,6 +385,94 @@ class Convention {
       throw new Error(`Erreur lors de la récupération des statistiques: ${error.message}`);
     }
   }
+
+  // Alias pour getStatistics (compatibilité avec le contrôleur)
+  static async getStats() {
+    return await this.getStatistics();
+  }
+
+  // Trouver les conventions par statut
+  static async findByStatus(status) {
+    try {
+      const query = `
+        SELECT 
+          c.*,
+          p.titre as partenariat_titre,
+          part.nom_organisation as partenaire_nom,
+          u.nom as responsable_nom,
+          u.prenom as responsable_prenom
+        FROM conventions c
+        LEFT JOIN partenariats p ON c.partenariats_id = p.id_partenariat
+        LEFT JOIN partenaires part ON p.partenaire_id = part.id_partenaire
+        LEFT JOIN utilisateurs u ON c.responsable_id = u.id_utilisateur
+        WHERE c.statut = $1
+        ORDER BY c.date_creation DESC
+      `;
+
+      const result = await pool.query(query, [status]);
+      return result.rows.map(row => new Convention(row));
+    } catch (error) {
+      throw new Error(`Erreur lors de la récupération des conventions par statut: ${error.message}`);
+    }
+  }
+
+  // Valider une convention
+  static async validate(conventionId, validatorId, statut, commentaire = null) {
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+
+      // Mettre à jour le statut de la convention
+      const updateConventionQuery = `
+        UPDATE conventions 
+        SET statut = $1, derniere_mise_a_jour = CURRENT_TIMESTAMP
+        WHERE id_convention = $2
+        RETURNING *
+      `;
+      
+      const conventionResult = await client.query(updateConventionQuery, [
+        statut === 'validee' ? 'signee' : 'annulee',
+        conventionId
+      ]);
+
+      if (conventionResult.rows.length === 0) {
+        throw new Error('Convention non trouvée');
+      }
+
+      // Enregistrer la validation dans circuit_validation
+      const insertValidationQuery = `
+        INSERT INTO circuit_validation (
+          convention_id,
+          validateur_id,
+          statut,
+          commentaire,
+          date_validation
+        ) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+        RETURNING *
+      `;
+
+      const validationResult = await client.query(insertValidationQuery, [
+        conventionId,
+        validatorId,
+        statut,
+        commentaire
+      ]);
+
+      await client.query('COMMIT');
+
+      return {
+        convention: new Convention(conventionResult.rows[0]),
+        validation: validationResult.rows[0]
+      };
+
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw new Error(`Erreur lors de la validation: ${error.message}`);
+    } finally {
+      client.release();
+    }
+  }
 }
 
 module.exports = Convention;

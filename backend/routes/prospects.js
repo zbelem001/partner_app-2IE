@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const ProspectController = require('../controllers/prospectController');
-const auth = require('../middleware/auth');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -62,21 +62,21 @@ const checkValidation = (req, res, next) => {
 };
 
 // POST /api/prospects - Créer un nouveau prospect
-router.post('/', auth, validateProspect, checkValidation, ProspectController.createProspect);
+router.post('/', authenticateToken, validateProspect, checkValidation, ProspectController.createProspect);
 
 // GET /api/prospects - Récupérer tous les prospects
-router.get('/', auth, ProspectController.getAllProspects);
+router.get('/', authenticateToken, ProspectController.getAllProspects);
 
 // GET /api/prospects/stats/overview - Obtenir les statistiques des prospects
-router.get('/stats/overview', auth, ProspectController.getProspectsStats);
+router.get('/stats/overview', authenticateToken, ProspectController.getProspectsStats);
 
 // GET /api/prospects/:id - Récupérer un prospect par ID
-router.get('/:id', auth, ProspectController.getProspectById);
+router.get('/:id', authenticateToken, ProspectController.getProspectById);
 
 // PUT /api/prospects/:id - Mettre à jour un prospect
-router.put('/:id', auth, validateProspect, checkValidation, ProspectController.updateProspect);
+router.put('/:id', authenticateToken, validateProspect, checkValidation, ProspectController.updateProspect);
 
 // DELETE /api/prospects/:id - Supprimer un prospect
-router.delete('/:id', auth, ProspectController.deleteProspect);
+router.delete('/:id', authenticateToken, ProspectController.deleteProspect);
 
 module.exports = router;

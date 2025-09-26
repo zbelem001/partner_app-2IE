@@ -10,6 +10,7 @@ class User {
     this.telephone = data.telephone;
     this.role = data.role;
     this.service = data.service;
+    this.statut = data.statut || 'actif';
     this.date_creation = data.date_creation;
     this.date_modification = data.date_modification;
     this.derniere_connexion = data.derniere_connexion;

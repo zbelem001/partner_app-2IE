@@ -90,7 +90,13 @@ const createTables = async () => {
       `ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`,
       `ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS derniere_connexion TIMESTAMP;`,
       `ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS token_reset VARCHAR(255);`,
-      `ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS token_reset_expire TIMESTAMP;`
+      `ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS token_reset_expire TIMESTAMP;`,
+      `ALTER TABLE utilisateurs ADD COLUMN IF NOT EXISTS statut VARCHAR(50) DEFAULT 'actif' CHECK (statut IN ('actif', 'inactif', 'suspendu'));`
+    ];
+
+    // Ajouter les colonnes manquantes pour la table prospects
+    const addMissingProspectsColumns = [
+      `ALTER TABLE prospects ADD COLUMN IF NOT EXISTS utilisateur_id INT REFERENCES utilisateurs(id_utilisateur) ON DELETE CASCADE;`
     ];
 
     // ========================
@@ -106,6 +112,7 @@ const createTables = async () => {
         email_contact       VARCHAR(200),
         telephone_contact   VARCHAR(50),
         statut              VARCHAR(50) DEFAULT 'en_contact' CHECK (statut IN ('en_contact', 'qualifie', 'abandonne')),
+        utilisateur_id      INT REFERENCES utilisateurs(id_utilisateur) ON DELETE CASCADE,
         date_creation       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         date_modification   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -257,8 +264,20 @@ const createTables = async () => {
       }
     }
 
+    // Ajouter les colonnes manquantes pour les prospects après création de la table
     await pool.query(createProspectsTable);
     console.log('✅ Table prospects créée');
+
+    for (const alterQuery of addMissingProspectsColumns) {
+      try {
+        await pool.query(alterQuery);
+      } catch (error) {
+        // Ignorer les erreurs si la colonne existe déjà
+        if (!error.message.includes('already exists')) {
+          console.log(`Info prospects: ${error.message}`);
+        }
+      }
+    }
 
     await pool.query(createPartnersTable);
     console.log('✅ Table partenaires créée');
@@ -286,6 +305,7 @@ const createTables = async () => {
       'CREATE INDEX IF NOT EXISTS idx_utilisateurs_email ON utilisateurs(email);',
       'CREATE INDEX IF NOT EXISTS idx_utilisateurs_role ON utilisateurs(role);',
       'CREATE INDEX IF NOT EXISTS idx_prospects_statut ON prospects(statut);',
+      'CREATE INDEX IF NOT EXISTS idx_prospects_utilisateur ON prospects(utilisateur_id);',
       'CREATE INDEX IF NOT EXISTS idx_partenaires_secteur ON partenaires(secteur);',
       'CREATE INDEX IF NOT EXISTS idx_partenaires_pays ON partenaires(pays);',
       'CREATE INDEX IF NOT EXISTS idx_partenariats_statut ON partenariats(statut);',

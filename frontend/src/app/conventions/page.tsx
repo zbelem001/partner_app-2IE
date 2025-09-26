@@ -14,7 +14,8 @@ import {
   XCircle,
   PlayCircle,
   FileText,
-  Users
+  Users,
+  Trash2
 } from 'lucide-react';
 
 // Interface pour les étapes de validation
@@ -791,6 +792,22 @@ export default function ConventionsPage() {
     return new Intl.NumberFormat('fr-FR').format(montant) + ' FCFA';
   };
 
+  const deleteConvention = async (conventionId: number) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette convention ? Cette action est irréversible.')) {
+      try {
+        // Appel à l'API pour supprimer la convention
+        // await ConventionService.deleteConvention(conventionId);
+        
+        // Pour l'instant, on supprime juste de l'état local
+        setConventions(prev => prev.filter(c => c.id_convention !== conventionId));
+        alert('Convention supprimée avec succès !');
+      } catch (error) {
+        alert('Erreur lors de la suppression de la convention');
+        console.error('Erreur:', error);
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-4">
       {/* Sidebar Navigation */}
@@ -1012,6 +1029,13 @@ export default function ConventionsPage() {
                         >
                           Voir détails
                         </button>
+                        <button 
+                          onClick={() => deleteConvention(convention.id_convention)}
+                          className="text-red-600 text-sm font-medium bg-red-50 px-4 py-2 rounded-xl cursor-pointer hover:bg-red-100 transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Supprimer</span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -1046,42 +1070,42 @@ export default function ConventionsPage() {
             {/* Contenu du popup */}
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="bg-white rounded-xl p-4">
-                  <h4 className="font-semibold text-black mb-2">Informations générales</h4>
+                <div className="bg-white rounded-xl p-4 border border-gray-200">
+                  <h4 className="font-semibold text-gray-900 mb-2">Informations générales</h4>
                   <div className="space-y-2 text-sm">
-                    <div><span className="font-medium">Type:</span> {selectedConvention.type_convention}</div>
-                    <div><span className="font-medium">Montant:</span> {formatMontant(selectedConvention.montant_engage)}</div>
-                    <div><span className="font-medium">Statut:</span> 
+                    <div><span className="font-medium text-gray-700">Type:</span> <span className="text-gray-900">{selectedConvention.type_convention}</span></div>
+                    <div><span className="font-medium text-gray-700">Montant:</span> <span className="text-gray-900">{formatMontant(selectedConvention.montant_engage)}</span></div>
+                    <div><span className="font-medium text-gray-700">Statut:</span> 
                       <span className={`ml-2 px-2 py-1 rounded-full text-xs ${getStatusColor(selectedConvention.statut)}`}>
                         {getStatusText(selectedConvention.statut)}
                       </span>
                     </div>
-                    <div><span className="font-medium">Service:</span> {selectedConvention.service_concerne}</div>
+                    <div><span className="font-medium text-gray-700">Service:</span> <span className="text-gray-900">{selectedConvention.service_concerne}</span></div>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl p-4">
-                  <h4 className="font-semibold text-black mb-2">Dates et progression</h4>
+                <div className="bg-white rounded-xl p-4 border border-gray-200">
+                  <h4 className="font-semibold text-gray-900 mb-2">Dates et progression</h4>
                   <div className="space-y-2 text-sm">
-                    <div><span className="font-medium">Signature:</span> {selectedConvention.date_signature ? new Date(selectedConvention.date_signature).toLocaleDateString('fr-FR') : 'Non signée'}</div>
-                    <div><span className="font-medium">Début:</span> {selectedConvention.date_debut ? new Date(selectedConvention.date_debut).toLocaleDateString('fr-FR') : 'N/A'}</div>
-                    <div><span className="font-medium">Fin:</span> {selectedConvention.date_fin ? new Date(selectedConvention.date_fin).toLocaleDateString('fr-FR') : 'N/A'}</div>
-                    <div><span className="font-medium">Documents:</span> {selectedConvention.documents_count}</div>
+                    <div><span className="font-medium text-gray-700">Signature:</span> <span className="text-gray-900">{selectedConvention.date_signature ? new Date(selectedConvention.date_signature).toLocaleDateString('fr-FR') : 'Non signée'}</span></div>
+                    <div><span className="font-medium text-gray-700">Début:</span> <span className="text-gray-900">{selectedConvention.date_debut ? new Date(selectedConvention.date_debut).toLocaleDateString('fr-FR') : 'N/A'}</span></div>
+                    <div><span className="font-medium text-gray-700">Fin:</span> <span className="text-gray-900">{selectedConvention.date_fin ? new Date(selectedConvention.date_fin).toLocaleDateString('fr-FR') : 'N/A'}</span></div>
+                    <div><span className="font-medium text-gray-700">Documents:</span> <span className="text-gray-900">{selectedConvention.documents_count}</span></div>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-black mb-2">Objet</h4>
-                <p className="text-sm text-black">{selectedConvention.objet}</p>
+              <div className="bg-white rounded-xl p-4 mb-6 border border-gray-200">
+                <h4 className="font-semibold text-gray-900 mb-2">Objet</h4>
+                <p className="text-sm text-gray-800">{selectedConvention.objet}</p>
               </div>
 
               {/* Circuit de validation */}
-              <div className="bg-white rounded-xl p-4 mb-6">
+              <div className="bg-white rounded-xl p-4 mb-6 border border-gray-200">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-semibold text-black">Circuit de validation</h4>
+                  <h4 className="font-semibold text-gray-900">Circuit de validation</h4>
                   <div className="flex items-center space-x-2">
-                    <div className="text-sm text-black">
+                    <div className="text-sm text-gray-800">
                       Progression: {selectedConvention.progression_validation}%
                     </div>
                     <div className="w-24 bg-gray-200 rounded-full h-2">
@@ -1096,7 +1120,7 @@ export default function ConventionsPage() {
                 {selectedConvention.statut === 'brouillon' ? (
                   <div className="text-center py-6">
                     <Clock className="mx-auto mb-2 text-gray-400" size={32} />
-                    <p className="text-gray-500 mb-4">Circuit de validation non démarré</p>
+                    <p className="text-gray-600 mb-4">Circuit de validation non démarré</p>
                     <button 
                       onClick={() => lancerCircuitValidation(selectedConvention.id_convention)}
                       className="bg-[#023047] text-white px-4 py-2 rounded-lg hover:bg-[#0f4c5c] transition-colors"
@@ -1138,10 +1162,10 @@ export default function ConventionsPage() {
                           <div className="flex-1">
                             <div className="flex items-center justify-between">
                               <div>
-                                <h5 className="font-medium text-black">{etape.nom_etape}</h5>
+                                <h5 className="font-medium text-gray-900">{etape.nom_etape}</h5>
                                 <p className="text-xs text-gray-600">{etape.description}</p>
                                 {validation && validation.valideur && (
-                                  <p className="text-xs text-black mt-1">
+                                  <p className="text-xs text-gray-800 mt-1">
                                     {validation.statut === 'validee' ? 'Validé' : 'Rejeté'} par {validation.valideur.prenom} {validation.valideur.nom} 
                                     {validation.date_validation && ` le ${new Date(validation.date_validation).toLocaleDateString('fr-FR')}`}
                                   </p>

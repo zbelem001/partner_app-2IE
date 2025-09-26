@@ -48,6 +48,7 @@ class ProspectController {
 
       // Paramètres de filtrage optionnels
       const filters = {
+        utilisateur_id: req.user.id, // Toujours filtrer par utilisateur connecté
         statut: req.query.statut,
         secteur: req.query.secteur,
         pays: req.query.pays,
@@ -55,9 +56,9 @@ class ProspectController {
         limit: req.query.limit ? parseInt(req.query.limit) : undefined
       };
 
-      // Supprimer les filtres vides
+      // Supprimer les filtres vides (sauf utilisateur_id qui est obligatoire)
       Object.keys(filters).forEach(key => {
-        if (!filters[key]) delete filters[key];
+        if (key !== 'utilisateur_id' && !filters[key]) delete filters[key];
       });
 
       const result = await Prospect.findAll(filters);
@@ -104,6 +105,14 @@ class ProspectController {
         });
       }
 
+      // Vérifier que le prospect appartient à l'utilisateur connecté
+      if (prospect.utilisateur_id && prospect.utilisateur_id !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Accès refusé à ce prospect'
+        });
+      }
+
       res.json({
         success: true,
         message: 'Prospect récupéré avec succès',
@@ -141,6 +150,14 @@ class ProspectController {
         return res.status(404).json({
           success: false,
           message: 'Prospect non trouvé'
+        });
+      }
+
+      // Vérifier que le prospect appartient à l'utilisateur connecté
+      if (existingProspect.utilisateur_id && existingProspect.utilisateur_id !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Accès refusé à ce prospect'
         });
       }
 
@@ -186,6 +203,14 @@ class ProspectController {
         });
       }
 
+      // Vérifier que le prospect appartient à l'utilisateur connecté
+      if (existingProspect.utilisateur_id && existingProspect.utilisateur_id !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Accès refusé à ce prospect'
+        });
+      }
+
       await Prospect.delete(parseInt(id));
 
       res.json({
@@ -216,9 +241,9 @@ class ProspectController {
   // Obtenir les statistiques des prospects
   static async getProspectsStats(req, res) {
     try {
-      console.log('📊 Récupération des statistiques des prospects');
+      console.log('📊 Récupération des statistiques des prospects pour utilisateur:', req.user.id);
 
-      const stats = await Prospect.getStats();
+      const stats = await Prospect.getStatistics(req.user.id);
 
       res.json({
         success: true,

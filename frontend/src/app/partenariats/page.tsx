@@ -15,7 +15,8 @@ import {
   Calendar,
   Users,
   AlertTriangle,
-  Edit
+  Edit,
+  Trash2
 } from 'lucide-react';
 
 
@@ -405,6 +406,22 @@ export default function PartenariatPage() {
     }
   };
 
+  const deletePartenariat = async (partenariatId: number) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce partenariat ? Cette action est irréversible.')) {
+      try {
+        // Appel à l'API pour supprimer le partenariat
+        // await PartenariatService.deletePartenariat(partenariatId);
+        
+        // Pour l'instant, on supprime juste de l'état local
+        setPartenariats(prev => prev.filter(p => p.id_partenariat !== partenariatId));
+        alert('Partenariat supprimé avec succès !');
+      } catch (error) {
+        alert('Erreur lors de la suppression du partenariat');
+        console.error('Erreur:', error);
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-4">
       {/* Sidebar Navigation */}
@@ -615,14 +632,23 @@ export default function PartenariatPage() {
                         </div>
                       </div>
 
-                      {/* Action Button */}
-                      <button 
-                        onClick={() => showPartenariatDetails(partenariat)}
-                        className="w-full text-black text-sm font-medium bg-gray-100 px-4 py-2 rounded-xl hover:bg-gray-200 transition-all duration-200 flex items-center justify-center space-x-2"
-                      >
-                        <Eye className="w-4 h-4" />
-                        <span>Voir détails</span>
-                      </button>
+                      {/* Action Buttons */}
+                      <div className="flex flex-col space-y-2">
+                        <button 
+                          onClick={() => showPartenariatDetails(partenariat)}
+                          className="w-full text-black text-sm font-medium bg-gray-100 px-4 py-2 rounded-xl hover:bg-gray-200 transition-all duration-200 flex items-center justify-center space-x-2"
+                        >
+                          <Eye className="w-4 h-4" />
+                          <span>Voir détails</span>
+                        </button>
+                        <button 
+                          onClick={() => deletePartenariat(partenariat.id_partenariat)}
+                          className="w-full text-red-600 text-sm font-medium bg-red-50 px-4 py-2 rounded-xl hover:bg-red-100 transition-all duration-200 flex items-center justify-center space-x-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Supprimer</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

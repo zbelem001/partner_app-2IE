@@ -14,7 +14,8 @@ import {
   XCircle,
   Building,
   Mail,
-  Phone
+  Phone,
+  Trash2
 } from 'lucide-react';
 import { Prospect as ProspectType } from '../../types/database';
 
@@ -237,6 +238,22 @@ export default function ProspectsPage() {
         ? { ...p, statut: newStatus, derniere_mise_a_jour: new Date().toISOString() }
         : p
     ));
+  };
+
+  const deleteProspect = async (prospectId: number) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce prospect ? Cette action est irréversible.')) {
+      try {
+        // Appel à l'API pour supprimer le prospect
+        // await ProspectService.deleteProspect(prospectId);
+        
+        // Pour l'instant, on supprime juste de l'état local
+        setProspects(prev => prev.filter(p => p.id_prospect !== prospectId));
+        alert('Prospect supprimé avec succès !');
+      } catch (error) {
+        alert('Erreur lors de la suppression du prospect');
+        console.error('Erreur:', error);
+      }
+    }
   };
 
   const getStatusColor = (statut: string) => {
@@ -473,6 +490,15 @@ export default function ProspectsPage() {
                         >
                           <Eye className="w-4 h-4" />
                           <span>Voir détails</span>
+                        </button>
+
+                        {/* Delete Button */}
+                        <button 
+                          onClick={() => deleteProspect(prospect.id_prospect)}
+                          className="text-red-600 text-sm font-medium bg-red-50 px-4 py-2 rounded-xl hover:bg-red-100 transition-all duration-200 flex items-center justify-center space-x-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Supprimer</span>
                         </button>
 
                         {/* Quick Status Update */}

@@ -11,6 +11,9 @@ const { testConnection, initializeDatabase } = require('./config/database');
 // Importer les routes
 const authRoutes = require('./routes/auth');
 const prospectRoutes = require('./routes/prospects');
+const conventionRoutes = require('./routes/conventions');
+const partnerRoutes = require('./routes/partners');
+const partenariatRoutes = require('./routes/partenariats');
 
 // Créer l'application Express
 const app = express();
@@ -87,6 +90,15 @@ app.use('/api/auth', authLimiter, authRoutes);
 
 // Routes prospects
 app.use('/api/prospects', prospectRoutes);
+
+// Routes conventions
+app.use('/api/conventions', conventionRoutes);
+
+// Routes partenaires
+app.use('/api/partners', partnerRoutes);
+
+// Routes partenariats
+app.use('/api/partenariats', partenariatRoutes);
 
 // Route de santé pour vérifier le statut de l'API
 app.get('/api/health', async (req, res) => {
@@ -170,6 +182,23 @@ const startServer = async () => {
       console.log(`   PUT  /api/prospects/:id    - Modifier un prospect`);
       console.log(`   DELETE /api/prospects/:id  - Supprimer un prospect`);
       console.log(`   GET  /api/prospects/stats/overview - Statistiques prospects`);
+      console.log(`   GET  /api/conventions      - Liste des conventions`);
+      console.log(`   POST /api/conventions      - Créer une convention`);
+      console.log(`   GET  /api/conventions/:id  - Détail d'une convention`);
+      console.log(`   PUT  /api/conventions/:id  - Modifier une convention`);
+      console.log(`   DELETE /api/conventions/:id - Supprimer une convention`);
+      console.log(`   GET  /api/conventions/stats/overview - Statistiques conventions`);
+      console.log(`   PUT  /api/conventions/:id/validate - Valider une convention`);
+      console.log(`   GET  /api/partners         - Liste des partenaires`);
+      console.log(`   POST /api/partners         - Créer un partenaire`);
+      console.log(`   GET  /api/partners/:id     - Détail d'un partenaire`);
+      console.log(`   PUT  /api/partners/:id     - Modifier un partenaire`);
+      console.log(`   DELETE /api/partners/:id   - Supprimer un partenaire`);
+      console.log(`   GET  /api/partenariats     - Liste des partenariats`);
+      console.log(`   POST /api/partenariats     - Créer un partenariat`);
+      console.log(`   GET  /api/partenariats/:id - Détail d'un partenariat`);
+      console.log(`   PUT  /api/partenariats/:id - Modifier un partenariat`);
+      console.log(`   DELETE /api/partenariats/:id - Supprimer un partenariat`);
       console.log(`\n✅ API prête à recevoir des requêtes !`);
     });
     

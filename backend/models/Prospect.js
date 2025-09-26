@@ -10,6 +10,7 @@ class Prospect {
     this.email_contact = data.email_contact;
     this.telephone_contact = data.telephone_contact;
     this.statut = data.statut;
+    this.utilisateur_id = data.utilisateur_id;
     this.date_creation = data.date_creation;
     this.date_modification = data.date_modification;
   }
@@ -24,17 +25,18 @@ class Prospect {
         contact,
         email_contact,
         telephone_contact,
-        statut
+        statut,
+        utilisateur_id
       } = prospectData;
 
       const query = `
-        INSERT INTO prospects (nom_organisation, secteur, pays, contact, email_contact, telephone_contact, statut)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO prospects (nom_organisation, secteur, pays, contact, email_contact, telephone_contact, statut, utilisateur_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING id_prospect
       `;
 
       const result = await pool.query(query, [
-        nom_organisation, secteur, pays, contact, email_contact, telephone_contact, statut || 'en_contact'
+        nom_organisation, secteur, pays, contact, email_contact, telephone_contact, statut || 'en_contact', utilisateur_id
       ]);
 
       return await this.findById(result.rows[0].id_prospect);
@@ -69,6 +71,13 @@ class Prospect {
       let query = 'SELECT * FROM prospects WHERE 1=1';
       const values = [];
       let paramIndex = 1;
+
+      // Filtre par utilisateur (obligatoire pour la sécurité)
+      if (filters.utilisateur_id) {
+        query += ` AND utilisateur_id = $${paramIndex}`;
+        values.push(filters.utilisateur_id);
+        paramIndex++;
+      }
 
       // Filtres dynamiques
       if (filters.statut) {
@@ -112,6 +121,13 @@ class Prospect {
       let query = 'SELECT COUNT(*) as total FROM prospects WHERE 1=1';
       const values = [];
       let paramIndex = 1;
+
+      // Filtre par utilisateur (obligatoire pour la sécurité)
+      if (filters.utilisateur_id) {
+        query += ` AND utilisateur_id = $${paramIndex}`;
+        values.push(filters.utilisateur_id);
+        paramIndex++;
+      }
 
       // Appliquer les mêmes filtres que findAll
       if (filters.statut) {
@@ -204,17 +220,26 @@ class Prospect {
   }
 
   // Obtenir les statistiques des prospects
-  static async getStatistics() {
+  static async getStatistics(utilisateur_id = null) {
     try {
-      const query = `
+      let query = `
         SELECT 
           statut,
           COUNT(*) as count
         FROM prospects 
-        GROUP BY statut
+        WHERE 1=1
       `;
       
-      const result = await pool.query(query);
+      const values = [];
+      
+      if (utilisateur_id) {
+        query += ' AND utilisateur_id = $1';
+        values.push(utilisateur_id);
+      }
+      
+      query += ' GROUP BY statut';
+      
+      const result = await pool.query(query, values);
       return result.rows;
     } catch (error) {
       throw new Error(`Erreur lors de la récupération des statistiques: ${error.message}`);
