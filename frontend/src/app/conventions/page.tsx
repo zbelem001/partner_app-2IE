@@ -1,21 +1,63 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../../hooks/useAuth';
 import {
   Search,
   User,
   Bell,
   MapPin,
-  Plus
+  Plus,
+  Clock,
+  CheckCircle,
+  XCircle,
+  PlayCircle,
+  FileText,
+  Users
 } from 'lucide-react';
 
-interface Convention {
+// Interface pour les étapes de validation
+interface EtapeValidation {
+  id_etape: number;
+  nom_etape: string;
+  description: string;
+  ordre: number;
+  service_responsable: string;
+  statut: 'en_attente' | 'validee' | 'rejetee';
+  date_validation: string | null;
+  valideur: {
+    nom: string;
+    prenom: string;
+    service: string;
+  } | null;
+  commentaire: string | null;
+}
+
+// Interface pour les validations d'une convention spécifique
+interface ValidationConvention {
+  id_validation: number;
+  convention_id: number;
+  etape: EtapeValidation;
+  statut: 'en_attente' | 'validee' | 'rejetee';
+  date_validation: string | null;
+  valideur: {
+    id_utilisateur: number;
+    nom: string;
+    prenom: string;
+    service: string;
+  } | null;
+  commentaire: string | null;
+}
+
+// Interface mise à jour pour les conventions avec circuit de validation
+interface ConventionWithRelations {
   id_convention: number;
   titre: string;
   type_convention: string;
   objet: string;
   reference_interne: string;
-  statut: 'brouillon' | 'en_validation' | 'signe' | 'expire';
+  statut: 'brouillon' | 'en_signature' | 'validee' | 'rejetee' | 'expire';
   date_signature: string | null;
   date_debut: string | null;
   date_fin: string | null;
@@ -23,7 +65,7 @@ interface Convention {
   service_concerne: string;
   date_creation: string;
   derniere_mise_a_jour: string;
-  // Relations PostgreSQL
+  // Relations existantes
   partenaire: {
     id_partenaire: number;
     nom_organisation: string;
@@ -43,14 +85,44 @@ interface Convention {
     taux_realisation: number;
     evaluation_finale: string;
   };
+  // Nouveau : Circuit de validation
+  validations: ValidationConvention[];
+  etape_courante: number; // Numéro de l'étape en cours
+  progression_validation: number; // Pourcentage de progression (0-100)
 }
 
 export default function ConventionsPage() {
+  const router = useRouter();
+  const { displayUser } = useAuth();
+
+  // Vérification de l'authentification
+  useEffect(() => {
+    // Vérifier que nous sommes côté client
+    if (typeof window !== 'undefined') {
+      const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+      if (!isAuthenticated) {
+        router.push('/');
+      }
+    }
+  }, [router]);
+
+  // Fonction de déconnexion
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userInfo');
+    router.push('/');
+  };
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'brouillon' | 'en_validation' | 'signe' | 'expire'>('all');
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'brouillon' | 'en_signature' | 'validee' | 'rejetee' | 'expire'>('all');
   const [showDetailsPopup, setShowDetailsPopup] = useState(false);
-  const [selectedConvention, setSelectedConvention] = useState<Convention | null>(null);
+  const [selectedConvention, setSelectedConvention] = useState<ConventionWithRelations | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showValidationModal, setShowValidationModal] = useState(false);
+  const [validationAction, setValidationAction] = useState<'valider' | 'rejeter' | null>(null);
+  const [validationComment, setValidationComment] = useState('');
+  const [selectedProspectId, setSelectedProspectId] = useState<number | null>(null);
   const [newConvention, setNewConvention] = useState({
     titre: '',
     type_convention: '',
@@ -60,33 +132,216 @@ export default function ConventionsPage() {
     date_fin: '',
     montant_engage: '',
     service_concerne: '',
-    partenaire_nom: '',
-    partenaire_secteur: '',
-    partenaire_pays: '',
-    partenaire_contact: '',
-    partenaire_email: '',
+    prospect_id: null as number | null,
     responsable_nom: '',
     responsable_prenom: '',
     responsable_service: ''
   });
 
+  // Utiliser les informations utilisateur du hook d'authentification
   const user = {
-    name: "Admin 2iE",
-    avatar: "👨‍💼",
+    name: displayUser.name,
+    avatar: displayUser.avatar,
     location: "Burkina Faso"
   };
 
   const notifications = 3;
 
+  // Circuit de validation standard - Étapes prédéfinies
+  const etapesValidationStandard: EtapeValidation[] = [
+    {
+      id_etape: 1,
+      nom_etape: "Direction concernée",
+      description: "Validation par la direction du service concerné",
+      ordre: 1,
+      service_responsable: "Direction concernée",
+      statut: 'en_attente',
+      date_validation: null,
+      valideur: null,
+      commentaire: null
+    },
+    {
+      id_etape: 2,
+      nom_etape: "SRECIP",
+      description: "Service Relations Extérieures & Coopération Internationale Partenariats",
+      ordre: 2,
+      service_responsable: "SRECIP",
+      statut: 'en_attente',
+      date_validation: null,
+      valideur: null,
+      commentaire: null
+    },
+    {
+      id_etape: 3,
+      nom_etape: "DFC",
+      description: "Direction Financière & Comptable",
+      ordre: 3,
+      service_responsable: "DFC",
+      statut: 'en_attente',
+      date_validation: null,
+      valideur: null,
+      commentaire: null
+    },
+    {
+      id_etape: 4,
+      nom_etape: "CAQ",
+      description: "Contrôle Assurance Qualité",
+      ordre: 4,
+      service_responsable: "CAQ",
+      statut: 'en_attente',
+      date_validation: null,
+      valideur: null,
+      commentaire: null
+    },
+    {
+      id_etape: 5,
+      nom_etape: "DG",
+      description: "Directeur Général",
+      ordre: 5,
+      service_responsable: "Direction Générale",
+      statut: 'en_attente',
+      date_validation: null,
+      valideur: null,
+      commentaire: null
+    },
+    {
+      id_etape: 6,
+      nom_etape: "Transmission partenaire",
+      description: "Transmission au partenaire pour signature",
+      ordre: 6,
+      service_responsable: "SRECIP",
+      statut: 'en_attente',
+      date_validation: null,
+      valideur: null,
+      commentaire: null
+    },
+    {
+      id_etape: 7,
+      nom_etape: "Archivage",
+      description: "Archivage de la convention signée",
+      ordre: 7,
+      service_responsable: "Archives",
+      statut: 'en_attente',
+      date_validation: null,
+      valideur: null,
+      commentaire: null
+    }
+  ];
+
+  // Liste des prospects disponibles (du plus récent au plus ancien)
+  const availableProspects = [
+    {
+      id_prospect: 6,
+      nom_organisation: "Université Cheikh Anta Diop - Extension",
+      secteur: "Enseignement Supérieur",
+      pays: "Sénégal",
+      contact: "Prof. Fatou Sow",
+      email_contact: "f.sow@ucad.edu.sn",
+      date_creation: "2024-11-10T15:30:00Z"
+    },
+    {
+      id_prospect: 2,
+      nom_organisation: "African Development Bank",
+      secteur: "Finance/Développement", 
+      pays: "Côte d'Ivoire",
+      contact: "M. Kwame Asante",
+      email_contact: "k.asante@afdb.org",
+      date_creation: "2024-11-01T09:00:00Z"
+    },
+    {
+      id_prospect: 1,
+      nom_organisation: "École Polytechnique de Montréal",
+      secteur: "Enseignement Supérieur",
+      pays: "Canada", 
+      contact: "Dr. Marie Tremblay",
+      email_contact: "m.tremblay@polymtl.ca",
+      date_creation: "2024-10-15T10:00:00Z"
+    },
+    {
+      id_prospect: 4,
+      nom_organisation: "Institut de Recherche Agricole du Sénégal",
+      secteur: "Recherche Agricole",
+      pays: "Sénégal",
+      contact: "Dr. Mamadou Ba", 
+      email_contact: "m.ba@isra.sn",
+      date_creation: "2024-08-10T08:30:00Z"
+    }
+  ];
+
+  // Fonctions utilitaires pour le circuit de validation
+  const creerValidationsInitiales = (conventionId: number): ValidationConvention[] => {
+    return etapesValidationStandard.map(etape => ({
+      id_validation: conventionId * 10 + etape.ordre,
+      convention_id: conventionId,
+      etape: { ...etape },
+      statut: 'en_attente' as const,
+      date_validation: null,
+      valideur: null,
+      commentaire: null
+    }));
+  };
+
+  // Fonction pour générer des validations simplifiées selon le statut
+  const genererValidationsParStatut = (conventionId: number, statut: string): ValidationConvention[] => {
+    if (statut === 'brouillon') return [];
+    
+    if (statut === 'en_signature') {
+      return [
+        {
+          id_validation: conventionId * 10 + 1,
+          convention_id: conventionId,
+          etape: { id_etape: 1, nom_etape: "Direction concernée", description: "Validation par la direction du service concerné", ordre: 1, service_responsable: "Direction concernée", statut: 'validee', date_validation: "2024-11-01T09:00:00Z", valideur: { nom: "KONE", prenom: "Ibrahim", service: "Direction" }, commentaire: "Approuvé" },
+          statut: 'validee',
+          date_validation: "2024-11-01T09:00:00Z",
+          valideur: { id_utilisateur: 2, nom: "KONE", prenom: "Ibrahim", service: "Direction" },
+          commentaire: "Approuvé"
+        },
+        {
+          id_validation: conventionId * 10 + 2,
+          convention_id: conventionId,
+          etape: { id_etape: 2, nom_etape: "SRECIP", description: "Service Relations Extérieures & Coopération Internationale Partenariats", ordre: 2, service_responsable: "SRECIP", statut: 'en_attente', date_validation: null, valideur: null, commentaire: null },
+          statut: 'en_attente',
+          date_validation: null,
+          valideur: null,
+          commentaire: null
+        }
+      ];
+    }
+    
+    return []; // Pour les conventions validées, rejetées ou expirées
+  };
+
+  const calculerProgressionValidation = (validations: ValidationConvention[]): number => {
+    const validees = validations.filter(v => v.statut === 'validee').length;
+    return Math.round((validees / validations.length) * 100);
+  };
+
+  const obtenirEtapeCourante = (validations: ValidationConvention[]): number => {
+    const premierEtapeEnAttente = validations.find(v => v.statut === 'en_attente');
+    return premierEtapeEnAttente ? premierEtapeEnAttente.etape.ordre : validations.length + 1;
+  };
+
+  const lancerCircuitValidation = (conventionId: number) => {
+    setConventions(prev => prev.map(conv => 
+      conv.id_convention === conventionId 
+        ? { 
+            ...conv, 
+            statut: 'en_signature' as const,
+            derniere_mise_a_jour: new Date().toISOString()
+          }
+        : conv
+    ));
+  };
+
   // Données des conventions (PostgreSQL format)
-  const [conventions, setConventions] = useState<Convention[]>([
+  const [conventions, setConventions] = useState<ConventionWithRelations[]>([
     {
       id_convention: 1,
       titre: "Convention de Coopération Académique",
       type_convention: "Académique",
       objet: "Échange d'étudiants et de professeurs, recherches conjointes",
       reference_interne: "CONV-2024-001",
-      statut: "signe",
+      statut: "validee",
       date_signature: "2024-01-15",
       date_debut: "2024-01-15",
       date_fin: "2026-01-15",
@@ -112,7 +367,75 @@ export default function ConventionsPage() {
       evaluation: {
         taux_realisation: 75,
         evaluation_finale: "en_cours"
-      }
+      },
+      // Circuit de validation - Toutes les étapes validées
+      validations: [
+        {
+          id_validation: 11,
+          convention_id: 1,
+          etape: { id_etape: 1, nom_etape: "Direction concernée", description: "Validation par la direction du service concerné", ordre: 1, service_responsable: "Direction concernée", statut: 'validee', date_validation: "2024-01-11T09:00:00Z", valideur: { nom: "KONE", prenom: "Ibrahim", service: "Relations Internationales" }, commentaire: "Convention approuvée" },
+          statut: 'validee',
+          date_validation: "2024-01-11T09:00:00Z",
+          valideur: { id_utilisateur: 2, nom: "KONE", prenom: "Ibrahim", service: "Relations Internationales" },
+          commentaire: "Convention approuvée"
+        },
+        {
+          id_validation: 12,
+          convention_id: 1,
+          etape: { id_etape: 2, nom_etape: "SRECIP", description: "Service Relations Extérieures & Coopération Internationale Partenariats", ordre: 2, service_responsable: "SRECIP", statut: 'validee', date_validation: "2024-01-12T10:30:00Z", valideur: { nom: "OUEDRAOGO", prenom: "Amadou", service: "SRECIP" }, commentaire: "Validé pour signature" },
+          statut: 'validee',
+          date_validation: "2024-01-12T10:30:00Z",
+          valideur: { id_utilisateur: 1, nom: "OUEDRAOGO", prenom: "Amadou", service: "SRECIP" },
+          commentaire: "Validé pour signature"
+        },
+        {
+          id_validation: 13,
+          convention_id: 1,
+          etape: { id_etape: 3, nom_etape: "DFC", description: "Direction Financière & Comptable", ordre: 3, service_responsable: "DFC", statut: 'validee', date_validation: "2024-01-13T14:00:00Z", valideur: { nom: "SAVADOGO", prenom: "Marie", service: "DFC" }, commentaire: "Budget validé" },
+          statut: 'validee',
+          date_validation: "2024-01-13T14:00:00Z",
+          valideur: { id_utilisateur: 3, nom: "SAVADOGO", prenom: "Marie", service: "DFC" },
+          commentaire: "Budget validé"
+        },
+        {
+          id_validation: 14,
+          convention_id: 1,
+          etape: { id_etape: 4, nom_etape: "CAQ", description: "Contrôle Assurance Qualité", ordre: 4, service_responsable: "CAQ", statut: 'validee', date_validation: "2024-01-14T11:15:00Z", valideur: { nom: "TRAORE", prenom: "Salia", service: "CAQ" }, commentaire: "Conforme aux standards" },
+          statut: 'validee',
+          date_validation: "2024-01-14T11:15:00Z",
+          valideur: { id_utilisateur: 4, nom: "TRAORE", prenom: "Salia", service: "CAQ" },
+          commentaire: "Conforme aux standards"
+        },
+        {
+          id_validation: 15,
+          convention_id: 1,
+          etape: { id_etape: 5, nom_etape: "DG", description: "Directeur Général", ordre: 5, service_responsable: "Direction Générale", statut: 'validee', date_validation: "2024-01-15T08:30:00Z", valideur: { nom: "ZERBO", prenom: "Boukary", service: "Direction Générale" }, commentaire: "Approuvé par la DG" },
+          statut: 'validee',
+          date_validation: "2024-01-15T08:30:00Z",
+          valideur: { id_utilisateur: 5, nom: "ZERBO", prenom: "Boukary", service: "Direction Générale" },
+          commentaire: "Approuvé par la DG"
+        },
+        {
+          id_validation: 16,
+          convention_id: 1,
+          etape: { id_etape: 6, nom_etape: "Transmission partenaire", description: "Transmission au partenaire pour signature", ordre: 6, service_responsable: "SRECIP", statut: 'validee', date_validation: "2024-01-15T15:00:00Z", valideur: { nom: "OUEDRAOGO", prenom: "Amadou", service: "SRECIP" }, commentaire: "Transmis et signé" },
+          statut: 'validee',
+          date_validation: "2024-01-15T15:00:00Z",
+          valideur: { id_utilisateur: 1, nom: "OUEDRAOGO", prenom: "Amadou", service: "SRECIP" },
+          commentaire: "Transmis et signé"
+        },
+        {
+          id_validation: 17,
+          convention_id: 1,
+          etape: { id_etape: 7, nom_etape: "Archivage", description: "Archivage de la convention signée", ordre: 7, service_responsable: "Archives", statut: 'validee', date_validation: "2024-01-16T09:00:00Z", valideur: { nom: "DIABATE", prenom: "Fatou", service: "Archives" }, commentaire: "Archivé" },
+          statut: 'validee',
+          date_validation: "2024-01-16T09:00:00Z",
+          valideur: { id_utilisateur: 6, nom: "DIABATE", prenom: "Fatou", service: "Archives" },
+          commentaire: "Archivé"
+        }
+      ],
+      etape_courante: 8, // Toutes les étapes terminées
+      progression_validation: 100
     },
     {
       id_convention: 2,
@@ -120,7 +443,7 @@ export default function ConventionsPage() {
       type_convention: "Recherche",
       objet: "Recherche sur l'irrigation intelligente en zone sahélienne",
       reference_interne: "CONV-2023-012",
-      statut: "signe",
+      statut: "validee",
       date_signature: "2023-09-01",
       date_debut: "2023-09-01",
       date_fin: "2025-09-01",
@@ -146,7 +469,10 @@ export default function ConventionsPage() {
       evaluation: {
         taux_realisation: 60,
         evaluation_finale: "en_cours"
-      }
+      },
+      validations: [], // Circuit déjà terminé
+      etape_courante: 8,
+      progression_validation: 100
     },
     {
       id_convention: 3,
@@ -154,7 +480,7 @@ export default function ConventionsPage() {
       type_convention: "Formation",
       objet: "Programme de stages en ingénierie civile",
       reference_interne: "CONV-2024-025",
-      statut: "en_validation",
+      statut: "en_signature",
       date_signature: null,
       date_debut: "2024-03-01",
       date_fin: "2025-03-01",
@@ -180,7 +506,13 @@ export default function ConventionsPage() {
       evaluation: {
         taux_realisation: 25,
         evaluation_finale: "en_cours"
-      }
+      },
+      validations: [
+        { id_validation: 31, convention_id: 3, etape: { id_etape: 1, nom_etape: "Direction concernée", description: "Validation par la direction du service concerné", ordre: 1, service_responsable: "Direction concernée", statut: 'validee', date_validation: "2024-02-25T09:00:00Z", valideur: { nom: "TRAORE", prenom: "Moussa", service: "Formation" }, commentaire: "Approuvé" }, statut: 'validee', date_validation: "2024-02-25T09:00:00Z", valideur: { id_utilisateur: 3, nom: "TRAORE", prenom: "Moussa", service: "Formation" }, commentaire: "Approuvé" },
+        { id_validation: 32, convention_id: 3, etape: { id_etape: 2, nom_etape: "SRECIP", description: "Service Relations Extérieures & Coopération Internationale Partenariats", ordre: 2, service_responsable: "SRECIP", statut: 'en_attente', date_validation: null, valideur: null, commentaire: null }, statut: 'en_attente', date_validation: null, valideur: null, commentaire: null }
+      ],
+      etape_courante: 2,
+      progression_validation: 14
     },
     {
       id_convention: 4,
@@ -214,7 +546,10 @@ export default function ConventionsPage() {
       evaluation: {
         taux_realisation: 10,
         evaluation_finale: "en_cours"
-      }
+      },
+      validations: [],
+      etape_courante: 1,
+      progression_validation: 0
     },
     {
       id_convention: 5,
@@ -222,7 +557,7 @@ export default function ConventionsPage() {
       type_convention: "Formation",
       objet: "Formation continue en énergies renouvelables",
       reference_interne: "CONV-2023-055",
-      statut: "signe",
+      statut: "validee",
       date_signature: "2023-11-01",
       date_debut: "2023-11-01",
       date_fin: "2024-11-01",
@@ -248,7 +583,10 @@ export default function ConventionsPage() {
       evaluation: {
         taux_realisation: 90,
         evaluation_finale: "reussie"
-      }
+      },
+      validations: [],
+      etape_courante: 8,
+      progression_validation: 100
     },
     {
       id_convention: 6,
@@ -281,7 +619,11 @@ export default function ConventionsPage() {
       documents_count: 20,
       evaluation: {
         taux_realisation: 100,
-        evaluation_finale: "reussie"      }
+        evaluation_finale: "reussie"
+      },
+      validations: [],
+      etape_courante: 8,
+      progression_validation: 100
     }
   ]);
 
@@ -294,7 +636,7 @@ export default function ConventionsPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const showConventionDetails = (convention: Convention) => {
+  const showConventionDetails = (convention: ConventionWithRelations) => {
     setSelectedConvention(convention);
     setShowDetailsPopup(true);
   };
@@ -310,6 +652,7 @@ export default function ConventionsPage() {
 
   const closeAddModal = () => {
     setShowAddModal(false);
+    setSelectedProspectId(null);
     setNewConvention({
       titre: '',
       type_convention: '',
@@ -319,15 +662,23 @@ export default function ConventionsPage() {
       date_fin: '',
       montant_engage: '',
       service_concerne: '',
-      partenaire_nom: '',
-      partenaire_secteur: '',
-      partenaire_pays: '',
-      partenaire_contact: '',
-      partenaire_email: '',
+      prospect_id: null,
       responsable_nom: '',
       responsable_prenom: '',
       responsable_service: ''
     });
+  };
+
+  const handleProspectSelection = (prospectId: number) => {
+    setSelectedProspectId(prospectId);
+    const selectedProspect = availableProspects.find(p => p.id_prospect === prospectId);
+    if (selectedProspect) {
+      setNewConvention(prev => ({
+        ...prev,
+        prospect_id: prospectId,
+        titre: `Convention avec ${selectedProspect.nom_organisation}`
+      }));
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -350,7 +701,7 @@ export default function ConventionsPage() {
     // Générer automatiquement la référence si elle n'est pas fournie
     const reference = newConvention.reference_interne || generateReference();
     
-    const nouvelleConvention: Convention = {
+    const nouvelleConvention: ConventionWithRelations = {
       id_convention: conventions.length + 1,
       titre: newConvention.titre,
       type_convention: newConvention.type_convention,
@@ -364,13 +715,30 @@ export default function ConventionsPage() {
       service_concerne: newConvention.service_concerne,
       date_creation: new Date().toISOString(),
       derniere_mise_a_jour: new Date().toISOString(),
-      partenaire: {
+      partenaire: selectedProspectId ? (() => {
+        const selectedProspect = availableProspects.find(p => p.id_prospect === selectedProspectId);
+        return selectedProspect ? {
+          id_partenaire: selectedProspectId,
+          nom_organisation: selectedProspect.nom_organisation,
+          secteur: selectedProspect.secteur,
+          pays: selectedProspect.pays,
+          contact: selectedProspect.contact,
+          email_contact: selectedProspect.email_contact
+        } : {
+          id_partenaire: conventions.length + 1,
+          nom_organisation: "Organisation inconnue",
+          secteur: "",
+          pays: "",
+          contact: "",
+          email_contact: ""
+        }
+      })() : {
         id_partenaire: conventions.length + 1,
-        nom_organisation: newConvention.partenaire_nom,
-        secteur: newConvention.partenaire_secteur,
-        pays: newConvention.partenaire_pays,
-        contact: newConvention.partenaire_contact,
-        email_contact: newConvention.partenaire_email
+        nom_organisation: "Organisation inconnue",
+        secteur: "",
+        pays: "",
+        contact: "",
+        email_contact: ""
       },
       responsable: newConvention.responsable_nom ? {
         id_utilisateur: 1,
@@ -382,7 +750,10 @@ export default function ConventionsPage() {
       evaluation: {
         taux_realisation: 0,
         evaluation_finale: "en_cours"
-      }
+      },
+      validations: [],
+      etape_courante: 1,
+      progression_validation: 0
     };
 
     // Dans une vraie application, ceci serait un appel API
@@ -396,19 +767,21 @@ export default function ConventionsPage() {
 
   const getStatusColor = (statut: string) => {
     switch (statut) {
-      case 'signe': return 'bg-green-100 text-green-700';
-      case 'en_validation': return 'bg-yellow-100 text-yellow-700';
+      case 'validee': return 'bg-green-100 text-green-700';
+      case 'en_signature': return 'bg-yellow-100 text-yellow-700';
       case 'brouillon': return 'bg-blue-100 text-blue-700';
-      case 'expire': return 'bg-red-100 text-red-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'rejetee': return 'bg-red-100 text-red-700';
+      case 'expire': return 'bg-gray-100 text-gray-700';
+      default: return 'bg-gray-100 text-black';
     }
   };
 
   const getStatusText = (statut: string) => {
     switch (statut) {
-      case 'signe': return 'Signée';
-      case 'en_validation': return 'En validation';
+      case 'validee': return 'Validée';
+      case 'en_signature': return 'En signature';
       case 'brouillon': return 'Brouillon';
+      case 'rejetee': return 'Rejetée';
       case 'expire': return 'Expirée';
       default: return statut;
     }
@@ -440,19 +813,31 @@ export default function ConventionsPage() {
             <h2 className="font-semibold text-black mb-3">Navigation</h2>
             <div className="space-y-2">
               <button 
-                onClick={() => window.location.href = '/'}
-                className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 text-sm font-medium transition-colors"
+                onClick={() => router.push('/dashboard')}
+                className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 text-black text-sm font-medium transition-colors"
               >
                 Tableau de bord
+              </button>
+              <button 
+                onClick={() => router.push('/prospects')}
+                className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 text-black text-sm font-medium transition-colors"
+              >
+                Prospects
               </button>
               <button className="w-full text-left px-3 py-2 rounded-lg bg-[#023047] text-white text-sm font-medium">
                 Conventions
               </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 text-sm font-medium transition-colors">
+              <button 
+                onClick={() => router.push('/partenaires')}
+                className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 text-black text-sm font-medium transition-colors"
+              >
                 Partenaires
               </button>
-              <button className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 text-gray-700 text-sm font-medium transition-colors">
-                Rapports
+              <button 
+                onClick={() => router.push('/partenariats')}
+                className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 text-black text-sm font-medium transition-colors"
+              >
+                Partenariats
               </button>
             </div>
           </div>
@@ -461,19 +846,19 @@ export default function ConventionsPage() {
           <div className="border-t pt-4 mt-4">
             <div className="flex items-center space-x-2 mb-3">
               <button className="relative p-2 hover:bg-gray-100 rounded-lg">
-                <Bell className="w-5 h-5 text-gray-600" />
+                <Bell className="w-5 h-5 text-black" />
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">{notifications}</span>
               </button>
               <button className="p-2 hover:bg-gray-100 rounded-lg">
-                <User className="w-5 h-5 text-gray-600" />
+                <User className="w-5 h-5 text-black" />
               </button>
             </div>
-            <a 
-              href="/login"
+            <button 
+              onClick={handleLogout}
               className="block w-full text-center px-3 py-2 bg-gray-400 text-white text-sm rounded-lg hover:bg-gray-500 transition-all duration-200"
             >
               Déconnexion
-            </a>
+            </button>
           </div>
         </div>
       </div>
@@ -486,55 +871,60 @@ export default function ConventionsPage() {
             <div className="px-6 py-4">
               {/* Search Bar */}
               <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black" />
                 <input
                   type="text"
                   placeholder="Rechercher conventions..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-100 rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-500"
                 />
               </div>
 
               {/* Filter Options */}
               <div className="flex items-center space-x-4 mb-4">
                 <div className="flex space-x-2">
-                  {['all', 'signe', 'en_validation', 'brouillon', 'expire'].map((status) => (
+                  {['all', 'validee', 'en_signature', 'brouillon', 'rejetee', 'expire'].map((status) => (
                     <button
                       key={status}
-                      onClick={() => setSelectedStatus(status as 'all' | 'brouillon' | 'en_validation' | 'signe' | 'expire')}
+                      onClick={() => setSelectedStatus(status as 'all' | 'brouillon' | 'en_signature' | 'validee' | 'rejetee' | 'expire')}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                         selectedStatus === status
                           ? 'bg-[#023047] text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          : 'bg-gray-100 text-black hover:bg-gray-200'
                       }`}
                     >
                       {status === 'all' ? 'Toutes' : 
-                       status === 'signe' ? 'Signées' :
-                       status === 'en_validation' ? 'En validation' :
-                       status === 'brouillon' ? 'Brouillons' : 'Expirées'}
+                       status === 'validee' ? 'Validées' :
+                       status === 'en_signature' ? 'En signature' :
+                       status === 'brouillon' ? 'Brouillons' : 
+                       status === 'rejetee' ? 'Rejetées' : 'Expirées'}
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-5 gap-4">
                 <div className="bg-green-50 p-4 rounded-xl border border-gray-200">
-                  <div className="text-3xl font-bold text-green-700">{conventions.filter(c => c.statut === 'signe').length}</div>
-                  <div className="text-base text-green-600 font-medium">Signées</div>
+                  <div className="text-3xl font-bold text-green-700">{conventions.filter(c => c.statut === 'validee').length}</div>
+                  <div className="text-base text-green-600 font-medium">Validées</div>
                 </div>
                 <div className="bg-yellow-50 p-4 rounded-xl border border-gray-200">
-                  <div className="text-3xl font-bold text-yellow-700">{conventions.filter(c => c.statut === 'en_validation').length}</div>
-                  <div className="text-base text-yellow-600 font-medium">En validation</div>
+                  <div className="text-3xl font-bold text-yellow-700">{conventions.filter(c => c.statut === 'en_signature').length}</div>
+                  <div className="text-base text-yellow-600 font-medium">En signature</div>
                 </div>
                 <div className="bg-blue-50 p-4 rounded-xl border border-gray-200">
                   <div className="text-3xl font-bold text-blue-700">{conventions.filter(c => c.statut === 'brouillon').length}</div>
                   <div className="text-base text-blue-600 font-medium">Brouillons</div>
                 </div>
+                <div className="bg-red-50 p-4 rounded-xl border border-gray-200">
+                  <div className="text-3xl font-bold text-red-700">{conventions.filter(c => c.statut === 'rejetee').length}</div>
+                  <div className="text-base text-red-600 font-medium">Rejetées</div>
+                </div>
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                  <div className="text-3xl font-bold text-gray-700">{conventions.length}</div>
-                  <div className="text-base text-gray-600 font-medium">Total</div>
+                  <div className="text-3xl font-bold text-black">{conventions.length}</div>
+                  <div className="text-base text-black font-medium">Total</div>
                 </div>
               </div>
             </div>
@@ -578,15 +968,15 @@ export default function ConventionsPage() {
 
                       {/* Title and Partner */}
                       <div className="mb-3">
-                        <h3 className="font-semibold text-gray-900 text-sm mb-1 line-clamp-2">{convention.titre}</h3>
-                        <p className="text-xs text-gray-600">
+                        <h3 className="font-semibold text-black text-sm mb-1 line-clamp-2">{convention.titre}</h3>
+                        <p className="text-xs text-black">
                           {convention.partenaire.nom_organisation}
                         </p>
                       </div>
 
                       {/* Type and Value */}
                       <div className="mb-3">
-                        <div className="text-xs text-gray-700 font-medium mb-1 bg-gray-100 px-2 py-1 rounded text-center">
+                        <div className="text-xs text-black font-medium mb-1 bg-gray-100 px-2 py-1 rounded text-center">
                           {convention.type_convention}
                         </div>
                         <div className="text-sm font-bold text-[#023047]">{formatMontant(convention.montant_engage)}</div>
@@ -595,7 +985,7 @@ export default function ConventionsPage() {
                       {/* Progress Bar */}
                       <div className="mb-3">
                         <div className="flex justify-between items-center mb-1">
-                          <span className="text-xs text-gray-600">Progression</span>
+                          <span className="text-xs text-black">Progression</span>
                           <span className="text-xs font-medium">{convention.evaluation?.taux_realisation || 0}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
@@ -607,7 +997,7 @@ export default function ConventionsPage() {
                       </div>
 
                       {/* Dates */}
-                      <div className="mb-4 text-xs text-gray-600">
+                      <div className="mb-4 text-xs text-black">
                         <div className="flex justify-between">
                           <span>Début: {convention.date_debut ? new Date(convention.date_debut).toLocaleDateString('fr-FR') : 'N/A'}</span>
                           <span>Fin: {convention.date_fin ? new Date(convention.date_fin).toLocaleDateString('fr-FR') : 'N/A'}</span>
@@ -618,7 +1008,7 @@ export default function ConventionsPage() {
                       <div className="flex flex-col space-y-2 -mb-2">
                         <button 
                           onClick={() => showConventionDetails(convention)}
-                          className="text-black text-sm font-medium bg-gray-100 px-4 py-2 rounded-xl cursor-pointer hover:bg-gray-300 hover:text-gray-800 transition-all duration-200 transform hover:scale-105"
+                          className="text-black text-sm font-medium bg-gray-100 px-4 py-2 rounded-xl cursor-pointer hover:bg-gray-300 hover:text-black transition-all duration-200 transform hover:scale-105"
                         >
                           Voir détails
                         </button>
@@ -640,13 +1030,13 @@ export default function ConventionsPage() {
             <div className="p-6 border-b border-gray-300">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-gray-800">{selectedConvention.titre}</h3>
-                  <p className="text-sm text-gray-600">{selectedConvention.partenaire.nom_organisation}</p>
-                  <p className="text-xs text-gray-500">Réf: {selectedConvention.reference_interne}</p>
+                  <h3 className="text-lg font-bold text-black">{selectedConvention.titre}</h3>
+                  <p className="text-sm text-black">{selectedConvention.partenaire.nom_organisation}</p>
+                  <p className="text-xs text-black">Réf: {selectedConvention.reference_interne}</p>
                 </div>
                 <button 
                   onClick={closeDetailsPopup}
-                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                  className="text-black hover:text-black text-2xl font-bold"
                 >
                   ×
                 </button>
@@ -657,7 +1047,7 @@ export default function ConventionsPage() {
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div className="bg-white rounded-xl p-4">
-                  <h4 className="font-semibold text-gray-800 mb-2">Informations générales</h4>
+                  <h4 className="font-semibold text-black mb-2">Informations générales</h4>
                   <div className="space-y-2 text-sm">
                     <div><span className="font-medium">Type:</span> {selectedConvention.type_convention}</div>
                     <div><span className="font-medium">Montant:</span> {formatMontant(selectedConvention.montant_engage)}</div>
@@ -671,7 +1061,7 @@ export default function ConventionsPage() {
                 </div>
 
                 <div className="bg-white rounded-xl p-4">
-                  <h4 className="font-semibold text-gray-800 mb-2">Dates et progression</h4>
+                  <h4 className="font-semibold text-black mb-2">Dates et progression</h4>
                   <div className="space-y-2 text-sm">
                     <div><span className="font-medium">Signature:</span> {selectedConvention.date_signature ? new Date(selectedConvention.date_signature).toLocaleDateString('fr-FR') : 'Non signée'}</div>
                     <div><span className="font-medium">Début:</span> {selectedConvention.date_debut ? new Date(selectedConvention.date_debut).toLocaleDateString('fr-FR') : 'N/A'}</div>
@@ -682,12 +1072,119 @@ export default function ConventionsPage() {
               </div>
 
               <div className="bg-white rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-gray-800 mb-2">Objet</h4>
-                <p className="text-sm text-gray-700">{selectedConvention.objet}</p>
+                <h4 className="font-semibold text-black mb-2">Objet</h4>
+                <p className="text-sm text-black">{selectedConvention.objet}</p>
+              </div>
+
+              {/* Circuit de validation */}
+              <div className="bg-white rounded-xl p-4 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-semibold text-black">Circuit de validation</h4>
+                  <div className="flex items-center space-x-2">
+                    <div className="text-sm text-black">
+                      Progression: {selectedConvention.progression_validation}%
+                    </div>
+                    <div className="w-24 bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-[#023047] h-2 rounded-full transition-all duration-300" 
+                        style={{ width: `${selectedConvention.progression_validation}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedConvention.statut === 'brouillon' ? (
+                  <div className="text-center py-6">
+                    <Clock className="mx-auto mb-2 text-gray-400" size={32} />
+                    <p className="text-gray-500 mb-4">Circuit de validation non démarré</p>
+                    <button 
+                      onClick={() => lancerCircuitValidation(selectedConvention.id_convention)}
+                      className="bg-[#023047] text-white px-4 py-2 rounded-lg hover:bg-[#0f4c5c] transition-colors"
+                    >
+                      <PlayCircle className="inline mr-2" size={16} />
+                      Lancer le circuit
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {etapesValidationStandard.map((etape) => {
+                      const validation = selectedConvention.validations.find(v => v.etape.ordre === etape.ordre);
+                      const isActive = selectedConvention.etape_courante === etape.ordre;
+                      const isCompleted = validation && validation.statut === 'validee';
+                      const isRejected = validation && validation.statut === 'rejetee';
+                      
+                      return (
+                        <div key={etape.id_etape} className={`flex items-center p-3 rounded-lg border-2 transition-all ${
+                          isActive ? 'border-blue-300 bg-blue-50' :
+                          isCompleted ? 'border-green-300 bg-green-50' :
+                          isRejected ? 'border-red-300 bg-red-50' :
+                          'border-gray-200 bg-gray-50'
+                        }`}>
+                          
+                          {/* Icône de statut */}
+                          <div className="mr-3">
+                            {isCompleted ? (
+                              <CheckCircle className="text-green-600" size={20} />
+                            ) : isRejected ? (
+                              <XCircle className="text-red-600" size={20} />
+                            ) : isActive ? (
+                              <Clock className="text-blue-600" size={20} />
+                            ) : (
+                              <div className="w-5 h-5 border-2 border-gray-300 rounded-full"></div>
+                            )}
+                          </div>
+
+                          {/* Contenu de l'étape */}
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h5 className="font-medium text-black">{etape.nom_etape}</h5>
+                                <p className="text-xs text-gray-600">{etape.description}</p>
+                                {validation && validation.valideur && (
+                                  <p className="text-xs text-black mt-1">
+                                    {validation.statut === 'validee' ? 'Validé' : 'Rejeté'} par {validation.valideur.prenom} {validation.valideur.nom} 
+                                    {validation.date_validation && ` le ${new Date(validation.date_validation).toLocaleDateString('fr-FR')}`}
+                                  </p>
+                                )}
+                                {validation && validation.commentaire && (
+                                  <p className="text-xs text-gray-700 italic mt-1">&ldquo;{validation.commentaire}&rdquo;</p>
+                                )}
+                              </div>
+                              
+                              {/* Actions pour étape active */}
+                              {isActive && selectedConvention.statut === 'en_signature' && (
+                                <div className="flex space-x-2">
+                                  <button 
+                                    onClick={() => {
+                                      setValidationAction('valider');
+                                      setShowValidationModal(true);
+                                    }}
+                                    className="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700 transition-colors"
+                                  >
+                                    Valider
+                                  </button>
+                                  <button 
+                                    onClick={() => {
+                                      setValidationAction('rejeter');
+                                      setShowValidationModal(true);
+                                    }}
+                                    className="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700 transition-colors"
+                                  >
+                                    Rejeter
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="bg-white rounded-xl p-4 mb-6">
-                <h4 className="font-semibold text-gray-800 mb-2">Partenaire</h4>
+                <h4 className="font-semibold text-black mb-2">Partenaire</h4>
                 <div className="space-y-2 text-sm">
                   <div><span className="font-medium">Organisation:</span> {selectedConvention.partenaire.nom_organisation}</div>
                   <div><span className="font-medium">Secteur:</span> {selectedConvention.partenaire.secteur}</div>
@@ -699,7 +1196,7 @@ export default function ConventionsPage() {
 
               {selectedConvention.responsable && (
                 <div className="bg-white rounded-xl p-4 mb-6">
-                  <h4 className="font-semibold text-gray-800 mb-2">Responsable</h4>
+                  <h4 className="font-semibold text-black mb-2">Responsable</h4>
                   <div className="space-y-2 text-sm">
                     <div><span className="font-medium">Nom:</span> {selectedConvention.responsable.nom} {selectedConvention.responsable.prenom}</div>
                     <div><span className="font-medium">Service:</span> {selectedConvention.responsable.service}</div>
@@ -708,14 +1205,14 @@ export default function ConventionsPage() {
               )}
 
               <div className="bg-white rounded-xl p-4">
-                <h4 className="font-semibold text-gray-800 mb-2">Évaluation</h4>
+                <h4 className="font-semibold text-black mb-2">Évaluation</h4>
                 <div className="w-full bg-gray-200 rounded-full h-3">
                   <div 
                     className="bg-[#023047] h-3 rounded-full transition-all duration-300" 
                     style={{ width: `${selectedConvention.evaluation?.taux_realisation || 0}%` }}
                   ></div>
                 </div>
-                <p className="text-sm text-gray-600 mt-2">
+                <p className="text-sm text-black mt-2">
                   Taux de réalisation: {selectedConvention.evaluation?.taux_realisation || 0}%
                   {selectedConvention.evaluation?.evaluation_finale && (
                     <span className="ml-2">({selectedConvention.evaluation.evaluation_finale})</span>
@@ -744,10 +1241,10 @@ export default function ConventionsPage() {
             {/* Header du modal */}
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-gray-800">Nouvelle Convention</h3>
+                <h3 className="text-xl font-bold text-black">Nouvelle Convention</h3>
                 <button 
                   onClick={closeAddModal}
-                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                  className="text-black hover:text-black text-2xl font-bold"
                 >
                   ×
                 </button>
@@ -760,10 +1257,10 @@ export default function ConventionsPage() {
                 
                 {/* Informations générales */}
                 <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-800 text-lg">Informations générales</h4>
+                  <h4 className="font-semibold text-black text-lg">Informations générales</h4>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-black mb-1">
                       Titre <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -772,13 +1269,13 @@ export default function ConventionsPage() {
                       value={newConvention.titre}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047] text-black"
                       placeholder="Titre de la convention"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-black mb-1">
                       Type de convention <span className="text-red-500">*</span>
                     </label>
                     <select
@@ -786,7 +1283,7 @@ export default function ConventionsPage() {
                       value={newConvention.type_convention}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047] text-black"
                     >
                       <option value="">Sélectionner un type</option>
                       <option value="Académique">Académique</option>
@@ -799,7 +1296,7 @@ export default function ConventionsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-black mb-1">
                       Référence interne
                     </label>
                     <input
@@ -807,13 +1304,13 @@ export default function ConventionsPage() {
                       name="reference_interne"
                       value={newConvention.reference_interne}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047] text-black"
                       placeholder="Auto-générée si vide"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-black mb-1">
                       Service concerné <span className="text-red-500">*</span>
                     </label>
                     <select
@@ -821,7 +1318,7 @@ export default function ConventionsPage() {
                       value={newConvention.service_concerne}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047] text-black"
                     >
                       <option value="">Sélectionner un service</option>
                       <option value="SRECIP">SRECIP</option>
@@ -835,7 +1332,7 @@ export default function ConventionsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-black mb-1">
                       Montant engagé (FCFA)
                     </label>
                     <input
@@ -843,14 +1340,14 @@ export default function ConventionsPage() {
                       name="montant_engage"
                       value={newConvention.montant_engage}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047] text-black"
                       placeholder="0"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-black mb-1">
                         Date de début
                       </label>
                       <input
@@ -858,11 +1355,11 @@ export default function ConventionsPage() {
                         name="date_debut"
                         value={newConvention.date_debut}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047] text-black"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-black mb-1">
                         Date de fin
                       </label>
                       <input
@@ -870,92 +1367,60 @@ export default function ConventionsPage() {
                         name="date_fin"
                         value={newConvention.date_fin}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047] text-black"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Informations partenaire */}
+                {/* Associer prospect */}
                 <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-800 text-lg">Informations partenaire</h4>
+                  <h4 className="font-semibold text-black text-lg">Associer prospect</h4>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nom de l&apos;organisation <span className="text-red-500">*</span>
+                    <label className="block text-sm font-medium text-black mb-1">
+                      Sélectionner un prospect (optionnel)
                     </label>
-                    <input
-                      type="text"
-                      name="partenaire_nom"
-                      value={newConvention.partenaire_nom}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
-                      placeholder="Nom du partenaire"
-                    />
+                    <select
+                      value={selectedProspectId || ''}
+                      onChange={(e) => handleProspectSelection(parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047] text-black"
+                    >
+                      <option value="">Choisir un prospect... (optionnel)</option>
+                      {availableProspects.map((prospect) => (
+                        <option key={prospect.id_prospect} value={prospect.id_prospect}>
+                          {prospect.nom_organisation} - {prospect.pays} ({prospect.contact})
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Secteur
-                    </label>
-                    <input
-                      type="text"
-                      name="partenaire_secteur"
-                      value={newConvention.partenaire_secteur}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
-                      placeholder="Secteur d'activité"
-                    />
-                  </div>
+                  {selectedProspectId && (
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <h5 className="font-medium text-blue-800 mb-2">Informations du prospect sélectionné</h5>
+                      {(() => {
+                        const selectedProspect = availableProspects.find(p => p.id_prospect === selectedProspectId);
+                        return selectedProspect ? (
+                          <div className="text-sm text-blue-700 space-y-1">
+                            <p><strong>Organisation:</strong> {selectedProspect.nom_organisation}</p>
+                            <p><strong>Secteur:</strong> {selectedProspect.secteur}</p>
+                            <p><strong>Pays:</strong> {selectedProspect.pays}</p>
+                            <p><strong>Contact:</strong> {selectedProspect.contact}</p>
+                            <p><strong>Email:</strong> {selectedProspect.email_contact}</p>
+                          </div>
+                        ) : null;
+                      })()}
+                    </div>
+                  )}
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Pays
-                    </label>
-                    <input
-                      type="text"
-                      name="partenaire_pays"
-                      value={newConvention.partenaire_pays}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
-                      placeholder="Pays du partenaire"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Contact
-                    </label>
-                    <input
-                      type="text"
-                      name="partenaire_contact"
-                      value={newConvention.partenaire_contact}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
-                      placeholder="Nom du contact"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email du contact
-                    </label>
-                    <input
-                      type="email"
-                      name="partenaire_email"
-                      value={newConvention.partenaire_email}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
-                      placeholder="email@partenaire.com"
-                    />
-                  </div>
-
-                  <h4 className="font-semibold text-gray-800 text-lg mt-6">Responsable 2iE</h4>
+                {/* Responsable 2iE */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-black text-lg">Responsable 2iE</h4>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-black mb-1">
                         Nom
                       </label>
                       <input
@@ -963,12 +1428,12 @@ export default function ConventionsPage() {
                         name="responsable_nom"
                         value={newConvention.responsable_nom}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047] text-black"
                         placeholder="Nom du responsable"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-black mb-1">
                         Prénom
                       </label>
                       <input
@@ -976,14 +1441,14 @@ export default function ConventionsPage() {
                         name="responsable_prenom"
                         value={newConvention.responsable_prenom}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047] text-black"
                         placeholder="Prénom du responsable"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-black mb-1">
                       Service du responsable
                     </label>
                     <input
@@ -991,7 +1456,7 @@ export default function ConventionsPage() {
                       name="responsable_service"
                       value={newConvention.responsable_service}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047] text-black"
                       placeholder="Service du responsable"
                     />
                   </div>
@@ -1000,7 +1465,7 @@ export default function ConventionsPage() {
 
               {/* Objet de la convention */}
               <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-black mb-1">
                   Objet de la convention <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -1009,7 +1474,7 @@ export default function ConventionsPage() {
                   onChange={handleInputChange}
                   required
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047] text-black"
                   placeholder="Décrivez l'objet et les objectifs de la convention..."
                 />
               </div>
@@ -1031,6 +1496,70 @@ export default function ConventionsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de validation/rejet */}
+      {showValidationModal && validationAction && selectedConvention && (
+        <div className="fixed inset-0 backdrop-blur-[2px] flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-bold text-black mb-4">
+              {validationAction === 'valider' ? 'Valider' : 'Rejeter'} l&apos;étape
+            </h3>
+            
+            <p className="text-sm text-gray-600 mb-4">
+              Étape courante: {etapesValidationStandard.find(e => e.ordre === selectedConvention.etape_courante)?.nom_etape}
+            </p>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-black mb-2">
+                Commentaire {validationAction === 'rejeter' ? '(obligatoire)' : '(optionnel)'}
+              </label>
+              <textarea
+                value={validationComment}
+                onChange={(e) => setValidationComment(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#023047] text-black"
+                placeholder={validationAction === 'valider' ? 
+                  "Commentaire sur la validation..." : 
+                  "Motif du rejet (obligatoire)..."
+                }
+              />
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowValidationModal(false);
+                  setValidationAction(null);
+                  setValidationComment('');
+                }}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => {
+                  if (validationAction === 'rejeter' && !validationComment.trim()) {
+                    alert('Un commentaire est obligatoire pour rejeter une étape');
+                    return;
+                  }
+                  // Ici on traiterait la validation/rejet
+                  console.log(`${validationAction} avec commentaire: ${validationComment}`);
+                  setShowValidationModal(false);
+                  setValidationAction(null);
+                  setValidationComment('');
+                }}
+                className={`px-4 py-2 text-white rounded-lg transition-colors ${
+                  validationAction === 'valider' 
+                    ? 'bg-green-600 hover:bg-green-700' 
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {validationAction === 'valider' ? 'Valider' : 'Rejeter'}
+              </button>
+            </div>
           </div>
         </div>
       )}

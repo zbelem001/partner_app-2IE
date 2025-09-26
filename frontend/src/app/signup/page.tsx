@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { 
   Eye, 
   EyeOff, 
@@ -238,12 +239,12 @@ export default function SignupPage() {
       </div>
 
       <div>
-        <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="phone" className="block text-sm font-medium text-black mb-2">
           Téléphone *
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Phone className="h-5 w-5 text-gray-400" />
+            <Phone className="h-5 w-5 text-black" />
           </div>
           <input
             id="phone"
@@ -261,12 +262,12 @@ export default function SignupPage() {
       </div>
 
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="password" className="block text-sm font-medium text-black mb-2">
           Mot de passe *
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Lock className="h-5 w-5 text-gray-400" />
+            <Lock className="h-5 w-5 text-black" />
           </div>
           <input
             id="password"
@@ -283,7 +284,7 @@ export default function SignupPage() {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-black hover:text-black"
             >
               {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
@@ -293,12 +294,12 @@ export default function SignupPage() {
       </div>
 
       <div>
-        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="confirmPassword" className="block text-sm font-medium text-black mb-2">
           Confirmer le mot de passe *
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Lock className="h-5 w-5 text-gray-400" />
+            <Lock className="h-5 w-5 text-black" />
           </div>
           <input
             id="confirmPassword"
@@ -315,7 +316,7 @@ export default function SignupPage() {
             <button
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-black hover:text-black"
             >
               {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
@@ -330,12 +331,12 @@ export default function SignupPage() {
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="dateOfBirth" className="block text-sm font-medium text-black mb-2">
             Date de naissance *
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Calendar className="h-5 w-5 text-gray-400" />
+              <Calendar className="h-5 w-5 text-black" />
             </div>
             <input
               id="dateOfBirth"
@@ -352,7 +353,7 @@ export default function SignupPage() {
         </div>
 
         <div>
-          <label htmlFor="nationality" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="nationality" className="block text-sm font-medium text-black mb-2">
             Nationalité *
           </label>
           <input
@@ -371,7 +372,7 @@ export default function SignupPage() {
       </div>
 
       <div>
-        <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="address" className="block text-sm font-medium text-black mb-2">
           Adresse complète *
         </label>
         <input
@@ -390,7 +391,7 @@ export default function SignupPage() {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="city" className="block text-sm font-medium text-black mb-2">
             Ville *
           </label>
           <input
@@ -408,7 +409,7 @@ export default function SignupPage() {
         </div>
 
         <div>
-          <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="postalCode" className="block text-sm font-medium text-black mb-2">
             Code postal
           </label>
           <input
@@ -428,12 +429,12 @@ export default function SignupPage() {
   const renderStep3 = () => (
     <div className="space-y-6">
       <div>
-        <label htmlFor="institution" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="institution" className="block text-sm font-medium text-black mb-2">
           Établissement d&apos;enseignement *
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Building className="h-5 w-5 text-gray-400" />
+            <Building className="h-5 w-5 text-black" />
           </div>
           <input
             id="institution"
@@ -451,7 +452,7 @@ export default function SignupPage() {
       </div>
 
       <div>
-        <label htmlFor="studentId" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="studentId" className="block text-sm font-medium text-black mb-2">
           Numéro étudiant
         </label>
         <input
@@ -466,7 +467,7 @@ export default function SignupPage() {
       </div>
 
       <div>
-        <label htmlFor="program" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="program" className="block text-sm font-medium text-black mb-2">
           Filière/Programme d&apos;études *
         </label>
         <input
@@ -485,7 +486,7 @@ export default function SignupPage() {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="academicLevel" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="academicLevel" className="block text-sm font-medium text-black mb-2">
             Niveau académique *
           </label>
           <select
@@ -507,7 +508,7 @@ export default function SignupPage() {
         </div>
 
         <div>
-          <label htmlFor="yearOfStudy" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="yearOfStudy" className="block text-sm font-medium text-black mb-2">
             Année d&apos;étude *
           </label>
           <select
@@ -547,7 +548,7 @@ export default function SignupPage() {
       </div>
 
       <div>
-        <label htmlFor="emergencyContact" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="emergencyContact" className="block text-sm font-medium text-black mb-2">
           Contact d&apos;urgence (nom complet) *
         </label>
         <input
@@ -565,12 +566,12 @@ export default function SignupPage() {
       </div>
 
       <div>
-        <label htmlFor="emergencyPhone" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="emergencyPhone" className="block text-sm font-medium text-black mb-2">
           Téléphone du contact d&apos;urgence *
         </label>
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Phone className="h-5 w-5 text-gray-400" />
+            <Phone className="h-5 w-5 text-black" />
           </div>
           <input
             id="emergencyPhone"
@@ -597,7 +598,7 @@ export default function SignupPage() {
             onChange={handleInputChange}
             className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mt-1"
           />
-          <label htmlFor="agreeToTerms" className="ml-3 text-sm text-gray-700">
+          <label htmlFor="agreeToTerms" className="ml-3 text-sm text-black">
             J&apos;accepte les{' '}
             <a href="#" className="text-indigo-600 hover:text-indigo-500 underline">
               conditions d&apos;utilisation
@@ -620,7 +621,7 @@ export default function SignupPage() {
             onChange={handleInputChange}
             className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded mt-1"
           />
-          <label htmlFor="agreeToNewsletter" className="ml-3 text-sm text-gray-700">
+          <label htmlFor="agreeToNewsletter" className="ml-3 text-sm text-black">
             Je souhaite recevoir des informations sur les opportunités de partenariat et les actualités de l&apos;établissement
           </label>
         </div>
@@ -631,6 +632,18 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen py-8 px-4" style={{background: 'linear-gradient(135deg, #d1d5db 0%, #f3f4f6 100%)'}}>
       <div className="max-w-2xl mx-auto">
+        
+        {/* Logo 2iE */}
+        <div className="flex justify-start mb-6">
+          <Image 
+            src="/logo-2ie.png" 
+            alt="Logo 2iE" 
+            width={120}
+            height={40}
+            className="h-12 w-auto"
+          />
+        </div>
+        
         {/* Header */}
         <div className="text-center mb-8">
           <div className="mx-auto h-16 w-16 bg-primary-dark rounded-xl flex items-center justify-center mb-4 shadow-lg">
